@@ -963,10 +963,133 @@ html,body { width:100%; height:100%; overflow:hidden; background:var(--c-bg); -w
   </div>
 </section>
 
-<!-- ═══ SLIDE 18 · 数据管线 (chapter) ══════════════════════════════ -->
-<section class="slide dark slide--chapter">
-  <div class="chapter-num" data-anim="fade-in" data-delay="0">INFRASTRUCTURE</div>
-  <h1 class="h1" data-anim="fade-up" data-delay="1">数据管线</h1>
+<!-- ═══ SLIDE 18 · 数据管线 ══════════════════════════════════════════ -->
+<section class="slide dark">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">数据壁垒</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">18 / 25</span>
+  </div>
+  <div class="slide-body" style="display:flex;flex-direction:column;gap:1.2vh;">
+
+    <!-- Title -->
+    <div data-anim="fade-up" data-delay="1" style="font-size:var(--sz-lead);line-height:1.3;font-weight:600;">
+      <span style="color:var(--c-accent);">数据壁垒：</span><span style="color:var(--c-fg);">5500万稀缺高质量3D原生资产 + 自研高效数据管线持续扩增</span>
+    </div>
+
+    <!-- 4 stat cards -->
+    <div data-anim="fade-in" data-delay="2" style="display:grid;grid-template-columns:repeat(4,1fr);gap:1vw;">
+      <div style="background:var(--c-bg-alt);border:1px solid var(--c-border);border-radius:6px;padding:1vh 1vw;text-align:center;">
+        <div style="font-family:var(--f-display);font-size:clamp(1.4rem,2.8vw,2.4rem);color:var(--c-accent);font-weight:700;line-height:1;">5500万+</div>
+        <div style="font-size:var(--sz-caption);color:var(--c-fg-2);margin-top:0.4vh;">高质量人工3D资产</div>
+      </div>
+      <div style="background:var(--c-bg-alt);border:1px solid var(--c-border);border-radius:6px;padding:1vh 1vw;text-align:center;">
+        <div style="font-family:var(--f-display);font-size:clamp(1.4rem,2.8vw,2.4rem);color:var(--c-accent);font-weight:700;line-height:1;">10x</div>
+        <div style="font-size:var(--sz-caption);color:var(--c-fg-2);margin-top:0.4vh;">领先第二名友商</div>
+      </div>
+      <div style="background:var(--c-bg-alt);border:1px solid var(--c-border);border-radius:6px;padding:1vh 1vw;text-align:center;">
+        <div style="font-family:var(--f-display);font-size:clamp(1.4rem,2.8vw,2.4rem);color:var(--c-accent);font-weight:700;line-height:1;">&gt;50%</div>
+        <div style="font-size:var(--sz-caption);color:var(--c-fg-2);margin-top:0.4vh;">绝版数据，不可复购</div>
+      </div>
+      <div style="background:var(--c-bg-alt);border:1px solid var(--c-border);border-radius:6px;padding:1vh 1vw;text-align:center;">
+        <div style="font-family:var(--f-display);font-size:clamp(1.4rem,2.8vw,2.4rem);color:var(--c-accent);font-weight:700;line-height:1;">25–250亿</div>
+        <div style="font-size:var(--sz-caption);color:var(--c-fg-2);margin-top:0.4vh;">市场重构成本</div>
+      </div>
+    </div>
+
+    <!-- Middle: data source + pricing | 数据标准 -->
+    <div data-anim="fade-in" data-delay="3" style="display:flex;gap:2vw;">
+
+      <!-- Left: source + pricing + 工程壁垒 -->
+      <div style="flex:1;min-height:0;display:flex;flex-direction:column;gap:0.8vh;">
+        <div style="font-size:var(--sz-caption);color:var(--c-fg-2);line-height:1.5;">
+          <span style="color:var(--c-fg);font-weight:600;">数据来源：</span>数百个渠道系统性收集——游戏工作室 / 建模师 / 工业设计师 / CG艺术家 / 独立游戏开发者 / 3D打印社区等
+        </div>
+        <!-- Pricing table -->
+        <div style="display:grid;grid-template-columns:auto 1fr 1fr;border:1px solid var(--c-border);border-radius:5px;overflow:hidden;font-size:var(--sz-caption);">
+          <div style="background:rgba(249,207,0,0.08);padding:0.5vh 0.8vw;border-bottom:1px solid var(--c-border);border-right:1px solid var(--c-border);"></div>
+          <div style="background:rgba(249,207,0,0.08);padding:0.5vh 0.8vw;border-bottom:1px solid var(--c-border);border-right:1px solid var(--c-border);color:var(--c-fg-2);text-align:center;">渠道</div>
+          <div style="background:rgba(249,207,0,0.08);padding:0.5vh 0.8vw;border-bottom:1px solid var(--c-border);color:var(--c-fg-2);text-align:center;">单价</div>
+          <div style="padding:0.5vh 0.8vw;border-bottom:1px solid var(--c-border);border-right:1px solid var(--c-border);color:var(--c-fg-3);white-space:nowrap;">国内市场</div>
+          <div style="padding:0.5vh 0.8vw;border-bottom:1px solid var(--c-border);border-right:1px solid var(--c-border);color:var(--c-fg);">CG模型网等</div>
+          <div style="padding:0.5vh 0.8vw;border-bottom:1px solid var(--c-border);color:var(--c-accent);">20–数百元 / 个</div>
+          <div style="padding:0.5vh 0.8vw;border-bottom:1px solid var(--c-border);border-right:1px solid var(--c-border);color:var(--c-fg-3);white-space:nowrap;">海外市场</div>
+          <div style="padding:0.5vh 0.8vw;border-bottom:1px solid var(--c-border);border-right:1px solid var(--c-border);color:var(--c-fg);">Artstation / Gumroad</div>
+          <div style="padding:0.5vh 0.8vw;border-bottom:1px solid var(--c-border);color:var(--c-accent);">数十美金 / 个</div>
+          <div style="padding:0.5vh 0.8vw;border-right:1px solid var(--c-border);color:var(--c-fg-3);white-space:nowrap;">高端定制</div>
+          <div style="padding:0.5vh 0.8vw;border-right:1px solid var(--c-border);color:var(--c-fg);">外包工作室</div>
+          <div style="padding:0.5vh 0.8vw;color:var(--c-accent);">数千–数万元 / 个</div>
+        </div>
+        <!-- 工程壁垒 -->
+        <div style="padding:0.7vh 1vw;background:rgba(249,207,0,0.05);border-left:2px solid var(--c-accent);border-radius:0 4px 4px 0;">
+          <span style="color:var(--c-accent);font-size:var(--sz-caption);font-weight:600;">工程壁垒：</span><span style="color:var(--c-fg-2);font-size:var(--sz-caption);">把数据高效转化为模型能力</span>
+        </div>
+      </div>
+
+      <!-- Right: 数据标准 -->
+      <div style="flex:0 0 34%;display:flex;flex-direction:column;gap:0.8vh;justify-content:flex-start;">
+        <div style="font-size:var(--sz-caption);color:var(--c-fg-3);font-weight:600;letter-spacing:0.06em;">数据标准</div>
+        <div style="display:flex;align-items:center;gap:0.8vw;padding:1vh 0.8vw;background:rgba(249,207,0,0.08);border:1px solid rgba(249,207,0,0.4);border-radius:5px;">
+          <img src="images/slide18_图片_82.png" style="width:2.4vw;max-width:28px;min-width:18px;object-fit:contain;flex-shrink:0;" />
+          <div>
+            <div style="font-size:var(--sz-caption);font-weight:600;color:var(--c-fg);">全人工制作</div>
+            <div style="font-size:0.62rem;color:var(--c-fg-3);">非扫描非合成</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.8vw;padding:1vh 0.8vw;background:rgba(255,255,255,0.02);border:1px solid var(--c-border);border-radius:5px;opacity:0.6;">
+          <img src="images/slide18_图片_87.png" style="width:2.4vw;max-width:28px;min-width:18px;object-fit:contain;flex-shrink:0;" />
+          <div>
+            <div style="font-size:var(--sz-caption);color:var(--c-fg-2);">扫描数据</div>
+            <div style="font-size:0.62rem;color:var(--c-fg-3);">破损缺面精修成本高</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.8vw;padding:1vh 0.8vw;background:rgba(255,255,255,0.02);border:1px solid var(--c-border);border-radius:5px;opacity:0.6;">
+          <img src="images/slide18_图片_88.png" style="width:2.4vw;max-width:28px;min-width:18px;object-fit:contain;flex-shrink:0;" />
+          <div>
+            <div style="font-size:var(--sz-caption);color:var(--c-fg-2);">合成数据</div>
+            <div style="font-size:0.62rem;color:var(--c-fg-3);">过拟合风险</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pipeline: 自动化管线 -->
+    <div data-anim="fade-up" data-delay="4" style="display:flex;background:var(--c-bg-alt);border:1px solid var(--c-border);border-radius:6px;overflow:hidden;">
+      <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:0.62rem;color:var(--c-fg-3);padding:0 0.7vw;display:flex;align-items:center;border-right:1px solid var(--c-border);white-space:nowrap;">自动化管线</div>
+      <div style="flex:1;display:grid;grid-template-columns:repeat(5,1fr);">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.4vh;padding:1vh 0.5vw;border-right:1px solid var(--c-border);text-align:center;">
+          <img src="images/slide18_图片_38.png" style="width:2.6vw;max-width:32px;min-width:20px;object-fit:contain;" />
+          <div style="font-size:var(--sz-caption);font-weight:600;color:var(--c-fg);">入库标准化</div>
+          <div style="font-size:0.58rem;color:var(--c-fg-3);line-height:1.4;">自研格式转换修复工具，统一OBJ/FBX/glTF/USD等多源格式，避免信息丢失</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.4vh;padding:1vh 0.5vw;border-right:1px solid var(--c-border);text-align:center;">
+          <img src="images/slide18_图片_42.png" style="width:2.6vw;max-width:32px;min-width:20px;object-fit:contain;" />
+          <div style="font-size:var(--sz-caption);font-weight:600;color:var(--c-fg);">筛选打分</div>
+          <div style="font-size:0.58rem;color:var(--c-fg-3);line-height:1.4;">专家标小批量→训AI打分模型→自动筛掉破损/非流形/碎面，5000万级无人能人工</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.4vh;padding:1vh 0.5vw;border-right:1px solid var(--c-border);text-align:center;">
+          <img src="images/slide18_图片_43.png" style="width:2.6vw;max-width:32px;min-width:20px;object-fit:contain;" />
+          <div style="font-size:var(--sz-caption);font-weight:600;color:var(--c-fg);">自动标注</div>
+          <div style="font-size:0.58rem;color:var(--c-fg-3);line-height:1.4;">多模态+图形学算子→部件/材质级语义分割，3D难人工标注，自动化是唯一解</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.4vh;padding:1vh 0.5vw;border-right:1px solid var(--c-border);text-align:center;">
+          <img src="images/slide18_图片_44.png" style="width:2.6vw;max-width:32px;min-width:20px;object-fit:contain;" />
+          <div style="font-size:var(--sz-caption);font-weight:600;color:var(--c-fg);">训练渲染</div>
+          <div style="font-size:0.58rem;color:var(--c-fg-3);line-height:1.4;">多相机/多光照→RGB+法向+深度同步生成，风格化缩小与真实用户图分布差异</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:0.4vh;padding:1vh 0.5vw;text-align:center;">
+          <img src="images/slide18_图片_45.png" style="width:2.6vw;max-width:32px;min-width:20px;object-fit:contain;" />
+          <div style="font-size:var(--sz-caption);font-weight:600;color:var(--c-fg);">表征转换</div>
+          <div style="font-size:0.58rem;color:var(--c-fg-3);line-height:1.4;">高模/低模/动画/贴图任务差异化处理，自研方法持续减少水密化与压缩精度损失</div>
+        </div>
+      </div>
+      <div style="writing-mode:vertical-rl;font-size:0.62rem;color:var(--c-accent);padding:0 0.7vw;display:flex;align-items:center;border-left:1px solid rgba(249,207,0,0.2);background:rgba(249,207,0,0.05);white-space:nowrap;">核心管线壁垒</div>
+    </div>
+
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">18 / 25</span>
+  </div>
 </section>
 
 <!-- ═══ SLIDE 19 · 工程部署优化 ══════════════════════════════════ -->
