@@ -206,7 +206,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:var(--c-bg); -w
 .mm-step-item { opacity:0; transition:opacity 0.35s ease; }
 .mm-step-item.mm-revealed { opacity:1; }
 /* SVG lines */
-.mm-line { fill:none; stroke:rgba(249,207,0,0.4); stroke-width:1.8px; stroke-dasharray:300; stroke-dashoffset:300; }
+.mm-line { fill:none; stroke:rgba(249,207,0,0.4); stroke-width:1.8px; stroke-dasharray:800; stroke-dashoffset:800; }
 .mm-line.mm-step-item { opacity:0; transition:opacity 0s; }
 .mm-line.mm-revealed { opacity:1; animation:kDrawLine 0.5s var(--ease-enter) forwards; }
 /* Center auto-shown on slide enter */
@@ -338,77 +338,161 @@ html,body { width:100%; height:100%; overflow:hidden; background:var(--c-bg); -w
   </div>
   <h2 class="h2" style="margin-bottom:1vh;" data-anim="fade-up" data-delay="1">从单点能力到完整工作站</h2>
   <div class="mindmap-wrap" style="flex:1;min-height:0;position:relative;">
-    <!-- SVG connection lines -->
-    <svg class="mindmap-svg" viewBox="0 0 1000 520" preserveAspectRatio="xMidYMid meet">
-      <!-- step 1: 生图 -->
-      <line class="mm-line mm-step-item" data-step="1" x1="500" y1="260" x2="390" y2="45"/>
-      <!-- step 2: 图生3D -->
-      <line class="mm-line mm-step-item" data-step="2" x1="500" y1="260" x2="500" y2="78"/>
-      <!-- step 3: 几何 + subs -->
-      <line class="mm-line mm-step-item" data-step="3" x1="500" y1="260" x2="720" y2="92"/>
-      <line class="mm-line mm-step-item" data-step="3" x1="720" y1="92" x2="820" y2="55" style="stroke-width:1px;"/>
-      <line class="mm-line mm-step-item" data-step="3" x1="720" y1="92" x2="840" y2="104" style="stroke-width:1px;"/>
-      <!-- step 4: 高清纹理 + sub -->
-      <line class="mm-line mm-step-item" data-step="4" x1="500" y1="260" x2="882" y2="205"/>
-      <line class="mm-line mm-step-item" data-step="4" x1="882" y1="205" x2="957" y2="175" style="stroke-width:1px;"/>
-      <!-- step 5: H/P系列 + subs -->
-      <line class="mm-line mm-step-item" data-step="5" x1="500" y1="260" x2="852" y2="332"/>
-      <line class="mm-line mm-step-item" data-step="5" x1="852" y1="332" x2="957" y2="306" style="stroke-width:1px;"/>
-      <line class="mm-line mm-step-item" data-step="5" x1="852" y1="332" x2="957" y2="352" style="stroke-width:1px;"/>
-      <!-- step 6: 分部件 + subs -->
-      <line class="mm-line mm-step-item" data-step="6" x1="500" y1="260" x2="700" y2="428"/>
-      <line class="mm-line mm-step-item" data-step="6" x1="700" y1="428" x2="762" y2="474" style="stroke-width:1px;"/>
-      <line class="mm-line mm-step-item" data-step="6" x1="700" y1="428" x2="820" y2="466" style="stroke-width:1px;"/>
-      <!-- step 7: 动画 + subs -->
-      <line class="mm-line mm-step-item" data-step="7" x1="500" y1="260" x2="300" y2="428"/>
-      <line class="mm-line mm-step-item" data-step="7" x1="300" y1="428" x2="218" y2="474" style="stroke-width:1px;"/>
-      <line class="mm-line mm-step-item" data-step="7" x1="300" y1="428" x2="160" y2="452" style="stroke-width:1px;"/>
-      <!-- step 8: 重拓扑 + sub -->
-      <line class="mm-line mm-step-item" data-step="8" x1="500" y1="260" x2="140" y2="332"/>
-      <line class="mm-line mm-step-item" data-step="8" x1="140" y1="332" x2="58" y2="354" style="stroke-width:1px;"/>
-      <!-- step 9: 智能重拓扑 -->
-      <line class="mm-line mm-step-item" data-step="9" x1="500" y1="260" x2="118" y2="205"/>
-      <!-- step 10: 人形 + sub -->
-      <line class="mm-line mm-step-item" data-step="10" x1="500" y1="260" x2="280" y2="92"/>
-      <line class="mm-line mm-step-item" data-step="10" x1="280" y1="92" x2="174" y2="62" style="stroke-width:1px;"/>
+    <svg viewBox="0 0 1200 480" preserveAspectRatio="xMidYMid meet" style="width:100%;height:100%;">
+
+      <!-- ── Bezier paths (drawn per step) ─────────────────────────── -->
+      <!-- Step 1: center → 图生3D -->
+      <path class="mm-line mm-step-item" data-step="1" d="M 665,240 C 728,240 728,160 732,160"/>
+      <!-- Step 2: 图生3D → 几何/纹理/PBR -->
+      <path class="mm-line mm-step-item" data-step="2" d="M 848,160 C 874,160 874,75 900,75"/>
+      <path class="mm-line mm-step-item" data-step="2" d="M 848,160 C 874,160 874,165 900,165"/>
+      <path class="mm-line mm-step-item" data-step="2" d="M 848,160 C 874,160 874,255 900,255"/>
+      <!-- Step 3: 几何→H/P系列, 纹理→高清纹理/智能笔刷 -->
+      <path class="mm-line mm-step-item" data-step="3" d="M 1000,75 C 1032,75 1032,50 1065,50"/>
+      <path class="mm-line mm-step-item" data-step="3" d="M 1000,75 C 1032,75 1032,100 1065,100"/>
+      <path class="mm-line mm-step-item" data-step="3" d="M 1000,165 C 1032,165 1032,145 1065,145"/>
+      <path class="mm-line mm-step-item" data-step="3" d="M 1000,165 C 1032,165 1032,195 1065,195"/>
+      <!-- Step 4: center → 分部件, 分部件 → 拆分/补全 -->
+      <path class="mm-line mm-step-item" data-step="4" d="M 665,240 C 728,240 728,355 732,355"/>
+      <path class="mm-line mm-step-item" data-step="4" d="M 848,355 C 874,355 874,330 900,330"/>
+      <path class="mm-line mm-step-item" data-step="4" d="M 848,355 C 874,355 874,380 900,380"/>
+      <!-- Step 5: center → 动画, 动画 → 绑骨/重定向 -->
+      <path class="mm-line mm-step-item" data-step="5" d="M 535,240 C 472,240 472,160 468,160"/>
+      <path class="mm-line mm-step-item" data-step="5" d="M 352,160 C 326,160 326,100 300,100"/>
+      <path class="mm-line mm-step-item" data-step="5" d="M 352,160 C 326,160 326,230 300,230"/>
+      <!-- Step 6: 绑骨 → 人形/其他生物 -->
+      <path class="mm-line mm-step-item" data-step="6" d="M 200,100 C 167,100 167,75 135,75"/>
+      <path class="mm-line mm-step-item" data-step="6" d="M 200,100 C 167,100 167,125 135,125"/>
+      <!-- Step 7: center → 生图 -->
+      <path class="mm-line mm-step-item" data-step="7" d="M 535,240 C 472,240 472,240 468,240"/>
+      <!-- Step 8: center → 重拓扑, 重拓扑 → 四边面/智能重拓扑 -->
+      <path class="mm-line mm-step-item" data-step="8" d="M 535,240 C 472,240 472,355 468,355"/>
+      <path class="mm-line mm-step-item" data-step="8" d="M 352,355 C 326,355 326,330 300,330"/>
+      <path class="mm-line mm-step-item" data-step="8" d="M 352,355 C 326,355 326,385 300,385"/>
+
+      <!-- ── CENTER node (mm-center-wrap) ───────────────────────────── -->
+      <g class="mm-center-wrap">
+        <rect x="535" y="212" width="130" height="56" rx="10" fill="#F9CF00"/>
+        <text x="600" y="240" text-anchor="middle" dominant-baseline="central"
+              font-family="'Agdasima',sans-serif" font-weight="700" font-size="28" fill="#111">Tripo</text>
+      </g>
+
+      <!-- ── Step 1: 图生3D ──────────────────────────────────────────── -->
+      <g class="mm-step-item" data-step="1">
+        <rect x="732" y="138" width="116" height="44" rx="7" fill="rgba(249,207,0,0.1)" stroke="rgba(249,207,0,0.55)" stroke-width="1"/>
+        <text x="790" y="160" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="16" fill="#F9CF00">图生3D</text>
+      </g>
+
+      <!-- ── Step 2: 几何 / 纹理 / PBR ─────────────────────────────── -->
+      <g class="mm-step-item" data-step="2">
+        <rect x="900" y="56" width="100" height="38" rx="6" fill="rgba(249,207,0,0.07)" stroke="rgba(249,207,0,0.4)" stroke-width="1"/>
+        <text x="950" y="75" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="15" fill="#e8e8e8">几何</text>
+      </g>
+      <g class="mm-step-item" data-step="2">
+        <rect x="900" y="146" width="100" height="38" rx="6" fill="rgba(249,207,0,0.07)" stroke="rgba(249,207,0,0.4)" stroke-width="1"/>
+        <text x="950" y="165" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="15" fill="#e8e8e8">纹理</text>
+      </g>
+      <g class="mm-step-item" data-step="2">
+        <rect x="900" y="236" width="100" height="38" rx="6" fill="rgba(249,207,0,0.07)" stroke="rgba(249,207,0,0.4)" stroke-width="1"/>
+        <text x="950" y="255" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="15" fill="#e8e8e8">PBR</text>
+      </g>
+
+      <!-- ── Step 3: H系列 / P系列 / 高清纹理 / 智能笔刷 ──────────── -->
+      <g class="mm-step-item" data-step="3">
+        <rect x="1065" y="32" width="90" height="36" rx="5" fill="rgba(249,207,0,0.09)" stroke="rgba(249,207,0,0.3)" stroke-width="1"/>
+        <text x="1110" y="50" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="14" fill="rgba(249,207,0,0.85)">H系列</text>
+      </g>
+      <g class="mm-step-item" data-step="3">
+        <rect x="1065" y="82" width="90" height="36" rx="5" fill="rgba(249,207,0,0.09)" stroke="rgba(249,207,0,0.3)" stroke-width="1"/>
+        <text x="1110" y="100" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="14" fill="rgba(249,207,0,0.85)">P系列</text>
+      </g>
+      <g class="mm-step-item" data-step="3">
+        <rect x="1065" y="127" width="90" height="36" rx="5" fill="rgba(249,207,0,0.09)" stroke="rgba(249,207,0,0.3)" stroke-width="1"/>
+        <text x="1110" y="145" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="14" fill="rgba(249,207,0,0.85)">高清纹理</text>
+      </g>
+      <g class="mm-step-item" data-step="3">
+        <rect x="1065" y="177" width="90" height="36" rx="5" fill="rgba(249,207,0,0.09)" stroke="rgba(249,207,0,0.3)" stroke-width="1"/>
+        <text x="1110" y="195" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="14" fill="rgba(249,207,0,0.85)">智能笔刷</text>
+      </g>
+
+      <!-- ── Step 4: 分部件 / 拆分 / 补全 ──────────────────────────── -->
+      <g class="mm-step-item" data-step="4">
+        <rect x="732" y="333" width="116" height="44" rx="7" fill="rgba(249,207,0,0.1)" stroke="rgba(249,207,0,0.55)" stroke-width="1"/>
+        <text x="790" y="355" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="16" fill="#F9CF00">分部件</text>
+      </g>
+      <g class="mm-step-item" data-step="4">
+        <rect x="900" y="311" width="100" height="38" rx="6" fill="rgba(249,207,0,0.07)" stroke="rgba(249,207,0,0.4)" stroke-width="1"/>
+        <text x="950" y="330" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="15" fill="#e8e8e8">拆分</text>
+      </g>
+      <g class="mm-step-item" data-step="4">
+        <rect x="900" y="361" width="100" height="38" rx="6" fill="rgba(249,207,0,0.07)" stroke="rgba(249,207,0,0.4)" stroke-width="1"/>
+        <text x="950" y="380" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="15" fill="#e8e8e8">补全</text>
+      </g>
+
+      <!-- ── Step 5: 动画 / 绑骨 / 重定向 ──────────────────────────── -->
+      <g class="mm-step-item" data-step="5">
+        <rect x="352" y="138" width="116" height="44" rx="7" fill="rgba(249,207,0,0.1)" stroke="rgba(249,207,0,0.55)" stroke-width="1"/>
+        <text x="410" y="160" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="16" fill="#F9CF00">动画</text>
+      </g>
+      <g class="mm-step-item" data-step="5">
+        <rect x="200" y="81" width="100" height="38" rx="6" fill="rgba(249,207,0,0.07)" stroke="rgba(249,207,0,0.4)" stroke-width="1"/>
+        <text x="250" y="100" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="15" fill="#e8e8e8">绑骨</text>
+      </g>
+      <g class="mm-step-item" data-step="5">
+        <rect x="200" y="211" width="100" height="38" rx="6" fill="rgba(249,207,0,0.07)" stroke="rgba(249,207,0,0.4)" stroke-width="1"/>
+        <text x="250" y="230" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="15" fill="#e8e8e8">重定向</text>
+      </g>
+
+      <!-- ── Step 6: 人形 / 其他生物 ────────────────────────────────── -->
+      <g class="mm-step-item" data-step="6">
+        <rect x="45" y="57" width="90" height="36" rx="5" fill="rgba(249,207,0,0.09)" stroke="rgba(249,207,0,0.3)" stroke-width="1"/>
+        <text x="90" y="75" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="14" fill="rgba(249,207,0,0.85)">人形</text>
+      </g>
+      <g class="mm-step-item" data-step="6">
+        <rect x="45" y="107" width="90" height="36" rx="5" fill="rgba(249,207,0,0.09)" stroke="rgba(249,207,0,0.3)" stroke-width="1"/>
+        <text x="90" y="125" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="14" fill="rgba(249,207,0,0.85)">其他生物</text>
+      </g>
+
+      <!-- ── Step 7: 生图 ────────────────────────────────────────────── -->
+      <g class="mm-step-item" data-step="7">
+        <rect x="352" y="218" width="116" height="44" rx="7" fill="rgba(249,207,0,0.1)" stroke="rgba(249,207,0,0.55)" stroke-width="1"/>
+        <text x="410" y="240" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="16" fill="#F9CF00">生图</text>
+      </g>
+
+      <!-- ── Step 8: 重拓扑 / 四边面 / 智能重拓扑 ──────────────────── -->
+      <g class="mm-step-item" data-step="8">
+        <rect x="352" y="333" width="116" height="44" rx="7" fill="rgba(249,207,0,0.1)" stroke="rgba(249,207,0,0.55)" stroke-width="1"/>
+        <text x="410" y="355" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="16" fill="#F9CF00">重拓扑</text>
+      </g>
+      <g class="mm-step-item" data-step="8">
+        <rect x="200" y="311" width="100" height="38" rx="6" fill="rgba(249,207,0,0.07)" stroke="rgba(249,207,0,0.4)" stroke-width="1"/>
+        <text x="250" y="330" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="15" fill="#e8e8e8">四边面</text>
+      </g>
+      <g class="mm-step-item" data-step="8">
+        <rect x="200" y="366" width="100" height="38" rx="6" fill="rgba(249,207,0,0.07)" stroke="rgba(249,207,0,0.4)" stroke-width="1"/>
+        <text x="250" y="385" text-anchor="middle" dominant-baseline="central"
+              font-family="'ChillDINGothicVF',sans-serif" font-size="14" fill="#e8e8e8">智能重拓扑</text>
+      </g>
     </svg>
-
-    <!-- Center node: auto-shown (not step-gated) -->
-    <div class="mm-node mm-center mm-step-item" data-step="0" style="left:50%;top:50%;">Tripo</div>
-
-    <!-- Step 1: 生图 -->
-    <div class="mm-node mm-branch mm-step-item" data-step="1" style="left:39%;top:9%;">生图</div>
-    <!-- Step 2: 图生3D -->
-    <div class="mm-node mm-branch mm-step-item" data-step="2" style="left:50%;top:15%;">图生3D</div>
-    <!-- Step 3: 几何 -->
-    <div class="mm-node mm-branch mm-step-item" data-step="3" style="left:72%;top:18%;">几何</div>
-    <div class="mm-node mm-leaf   mm-step-item" data-step="3" style="left:82%;top:11%;">纹理</div>
-    <div class="mm-node mm-leaf   mm-step-item" data-step="3" style="left:84%;top:20%;">PBR</div>
-    <!-- Step 4: 高清纹理 -->
-    <div class="mm-node mm-branch mm-step-item" data-step="4" style="left:88%;top:39%;">高清纹理</div>
-    <div class="mm-node mm-leaf   mm-step-item" data-step="4" style="left:96%;top:34%;">智能笔刷</div>
-    <!-- Step 5: H/P系列 -->
-    <div class="mm-node mm-branch mm-step-item" data-step="5" style="left:85%;top:64%;">H / P 系列</div>
-    <div class="mm-node mm-leaf   mm-step-item" data-step="5" style="left:96%;top:59%;">H系列</div>
-    <div class="mm-node mm-leaf   mm-step-item" data-step="5" style="left:96%;top:68%;">P系列</div>
-    <!-- Step 6: 分部件 -->
-    <div class="mm-node mm-branch mm-step-item" data-step="6" style="left:70%;top:82%;">分部件</div>
-    <div class="mm-node mm-leaf   mm-step-item" data-step="6" style="left:76%;top:91%;">拆分</div>
-    <div class="mm-node mm-leaf   mm-step-item" data-step="6" style="left:84%;top:90%;">补全</div>
-    <!-- Step 7: 动画 -->
-    <div class="mm-node mm-branch mm-step-item" data-step="7" style="left:30%;top:82%;">动画</div>
-    <div class="mm-node mm-leaf   mm-step-item" data-step="7" style="left:22%;top:91%;">绑骨</div>
-    <div class="mm-node mm-leaf   mm-step-item" data-step="7" style="left:16%;top:87%;">重定向</div>
-    <!-- Step 8: 重拓扑 -->
-    <div class="mm-node mm-branch mm-step-item" data-step="8" style="left:14%;top:64%;">重拓扑</div>
-    <div class="mm-node mm-leaf   mm-step-item" data-step="8" style="left:6%;top:68%;">四边面</div>
-    <!-- Step 9: 智能重拓扑 -->
-    <div class="mm-node mm-branch mm-step-item" data-step="9" style="left:12%;top:39%;">智能重拓扑</div>
-    <!-- Step 10: 人形 -->
-    <div class="mm-node mm-branch mm-step-item" data-step="10" style="left:28%;top:18%;">人形</div>
-    <div class="mm-node mm-leaf   mm-step-item" data-step="10" style="left:17%;top:12%;">其他生物</div>
-
-    <!-- Click hint -->
     <div class="mm-hint" id="mm-hint">点击继续 →</div>
   </div>
   <div class="slide-foot">
@@ -1128,7 +1212,7 @@ html,body { width:100%; height:100%; overflow:hidden; background:var(--c-bg); -w
 
         /* ── Mind map step system ──────────────────────────────────────────── */
         const MINDMAP_IDX = 2; // slide 3 is index 2
-        const MM_MAX_STEP = 10;
+        const MM_MAX_STEP = 8;
         let mmStep = -1;
 
         function mmRevealNext() {
