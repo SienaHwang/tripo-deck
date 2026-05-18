@@ -1,0 +1,1340 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Tripo背后的算法：从过去到未来</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ── Brand fonts ─────────────────────────────────────────────── */
+@font-face {
+  font-family: 'Agdasima';
+  src: url('Agdasima-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'ChillDIN';
+  src: url('ChillDINGothicVF.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+}
+
+/* ── Design tokens ───────────────────────────────────────────── */
+:root {
+  --c-bg:           #111111;
+  --c-bg-alt:       #1c1c1a;
+  --c-bg-light:     #F9CF00;
+  --c-bg-light-alt: #f0c800;
+
+  --c-fg:           #F9CF00;
+  --c-fg-2:         rgba(249,207,0,0.55);
+  --c-fg-3:         rgba(249,207,0,0.28);
+  --c-fg-light:     #111111;
+  --c-fg-light-2:   rgba(17,17,17,0.62);
+  --c-fg-light-3:   rgba(17,17,17,0.35);
+  --c-accent:       #F9CF00;
+  --c-border:       #2a2a28;
+  --c-border-light: rgba(17,17,17,0.18);
+
+  --f-display: 'Agdasima', 'Noto Sans SC', sans-serif;
+  --f-heading: 'Agdasima', 'Noto Sans SC', sans-serif;
+  --f-body:    'ChillDIN', 'Noto Sans SC', system-ui, sans-serif;
+  --f-mono:    'IBM Plex Mono', monospace;
+
+  --sz-display: 12vw;
+  --sz-h1:      8vw;
+  --sz-h2:      5.2vw;
+  --sz-h3:      3.2vw;
+  --sz-lead:    2.0vw;
+  --sz-body:    1.5vw;
+  --sz-caption: 1.1vw;
+  --sz-label:   0.9vw;
+
+  --pad-x: 5vw;
+  --pad-y: 5vh;
+  --gap-lg: 3.5vh;
+  --gap-md: 2vh;
+  --gap-sm: 1vh;
+
+  --ease-slide: cubic-bezier(0.77,0,0.175,1);
+  --dur-slide:  0.75s;
+  --ease-enter: cubic-bezier(0.16,1,0.3,1);
+  --dur-enter:  0.5s;
+}
+
+/* ── Engine (do not modify) ──────────────────────────────────── */
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html,body { width:100%; height:100%; overflow:hidden; background:var(--c-bg); -webkit-font-smoothing:antialiased; }
+#deck { display:flex; height:100vh; transition:transform var(--dur-slide) var(--ease-slide); will-change:transform; }
+.slide { flex:0 0 100vw; width:100vw; height:100vh; position:relative; padding:var(--pad-y) var(--pad-x); display:grid; grid-template-rows:auto 1fr auto; overflow:hidden; }
+.slide-body { min-height:0; }
+.slide.dark  { background:var(--c-bg); color:var(--c-fg); }
+.slide.light { background:var(--c-bg-light); color:var(--c-fg-light); }
+
+/* ── Animation system ────────────────────────────────────────── */
+[data-anim] { opacity:0; }
+.slide.is-active [data-anim] { animation-duration:var(--dur-enter); animation-timing-function:var(--ease-enter); animation-fill-mode:forwards; }
+.slide.is-active [data-anim="fade-up"]      { animation-name:kFadeUp; }
+.slide.is-active [data-anim="fade-in"]      { animation-name:kFadeIn; }
+.slide.is-active [data-anim="reveal-right"] { animation-name:kRevealRight; }
+.slide.is-active [data-anim="scale-in"]     { animation-name:kScaleIn; }
+
+[data-delay="0"]  { animation-delay:0s;    }
+[data-delay="1"]  { animation-delay:0.08s; }
+[data-delay="2"]  { animation-delay:0.18s; }
+[data-delay="3"]  { animation-delay:0.30s; }
+[data-delay="4"]  { animation-delay:0.44s; }
+[data-delay="5"]  { animation-delay:0.60s; }
+[data-delay="6"]  { animation-delay:0.78s; }
+[data-delay="7"]  { animation-delay:0.98s; }
+[data-delay="8"]  { animation-delay:1.20s; }
+[data-delay="9"]  { animation-delay:1.44s; }
+[data-delay="10"] { animation-delay:1.70s; }
+[data-delay="11"] { animation-delay:1.98s; }
+[data-delay="12"] { animation-delay:2.28s; }
+[data-delay="13"] { animation-delay:2.60s; }
+[data-delay="14"] { animation-delay:2.94s; }
+[data-delay="15"] { animation-delay:3.30s; }
+
+@keyframes kFadeUp   { from{ opacity:0; transform:translateY(28px); } to{ opacity:1; transform:none; } }
+@keyframes kFadeIn   { from{ opacity:0; } to{ opacity:1; } }
+@keyframes kRevealRight { from{ clip-path:inset(0 100% 0 0); opacity:1; } to{ clip-path:inset(0 0 0 0); opacity:1; } }
+@keyframes kScaleIn  { from{ opacity:0; transform:scale(0.92); } to{ opacity:1; transform:none; } }
+@keyframes kDrawLine { from{ stroke-dashoffset:200; } to{ stroke-dashoffset:0; } }
+
+/* ── Nav UI ──────────────────────────────────────────────────── */
+#nav-dots { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); display:flex; gap:4px; z-index:200; padding:6px 10px; }
+.nav-dot { width:7px; height:7px; border-radius:50%; border:none; background:rgba(255,255,255,0.25); cursor:pointer; transition:background 0.25s,transform 0.25s; padding:8px; box-sizing:content-box; background-clip:content-box; }
+.nav-dot:hover { background:rgba(255,255,255,0.55); background-clip:content-box; }
+.nav-dot.is-active { background:rgba(255,255,255,0.85); transform:scale(1.2); background-clip:content-box; }
+#slide-counter { position:fixed; bottom:20px; right:28px; font-family:var(--f-mono); font-size:10px; letter-spacing:0.12em; color:rgba(255,255,255,0.25); z-index:100; user-select:none; }
+
+/* ── Typography ──────────────────────────────────────────────── */
+.display { font-size:var(--sz-display); font-weight:700; line-height:0.88; letter-spacing:-0.02em; text-transform:uppercase; font-family:var(--f-display); }
+.h1 { font-size:var(--sz-h1); font-weight:700; line-height:0.9; letter-spacing:-0.02em; text-transform:uppercase; font-family:var(--f-heading); }
+.h2 { font-size:var(--sz-h2); font-weight:700; line-height:0.95; letter-spacing:-0.01em; text-transform:uppercase; font-family:var(--f-heading); }
+.h3 { font-size:var(--sz-h3); font-weight:700; line-height:1.1; text-transform:uppercase; font-family:var(--f-heading); }
+.lead { font-size:var(--sz-lead); font-weight:500; line-height:1.45; font-family:var(--f-body); }
+.body { font-size:var(--sz-body); font-weight:400; line-height:1.6; font-family:var(--f-body); }
+.caption { font-size:var(--sz-caption); font-weight:400; line-height:1.5; font-family:var(--f-body); }
+.label { font-size:var(--sz-label); font-weight:500; letter-spacing:0.06em; font-family:var(--f-mono); }
+.muted { color:var(--c-fg-2); }
+.light .muted { color:var(--c-fg-light-2); }
+.accent { color:var(--c-accent); }
+.bullet-list { list-style:none; display:flex; flex-direction:column; gap:var(--gap-sm); font-family:var(--f-body); font-size:var(--sz-body); font-weight:400; line-height:1.5; padding-left:1em; }
+.bullet-list li::before { content:"\2014"; margin-left:-1em; margin-right:0.5em; color:var(--c-accent); }
+.light .bullet-list li::before { color:var(--c-fg-light); }
+.bullet-list .sub-item { font-size:calc(var(--sz-body)*0.9); color:var(--c-fg-2); padding-left:0.5em; }
+.bullet-list .sub-item::before { content:"\00B7  "; margin-left:-1em; color:var(--c-fg-3); }
+
+/* ── Chrome ──────────────────────────────────────────────────── */
+.slide-chrome,.slide-foot { display:flex; justify-content:space-between; align-items:center; }
+.slide-chrome { padding-bottom:var(--gap-sm); border-bottom:1px solid var(--c-border); margin-bottom:var(--gap-md); }
+.slide-foot   { padding-top:var(--gap-sm); border-top:1px solid var(--c-border); margin-top:var(--gap-md); }
+.light .slide-chrome,.light .slide-foot { border-color:var(--c-border-light); }
+.slide--cover .slide-chrome,.slide--cover .slide-foot,
+.slide--chapter .slide-chrome,.slide--chapter .slide-foot,
+.slide--quote .slide-chrome,.slide--quote .slide-foot,
+.slide--statement .slide-chrome,.slide--statement .slide-foot,
+.slide--end .slide-chrome,.slide--end .slide-foot { display:none; }
+
+/* ── Cover layout ────────────────────────────────────────────── */
+.slide--cover { display:flex; flex-direction:column; justify-content:space-between; padding:0; position:relative; }
+.cover-logo { position:absolute; top:var(--pad-y); left:var(--pad-x); z-index:2; height:3.6vh; }
+.cover-logo svg { height:100%; width:auto; }
+.cover-type { position:relative; z-index:1; padding:calc(var(--pad-y)*2.5) var(--pad-x) 0; flex:1; display:flex; align-items:flex-end; }
+.cover-meta { position:relative; z-index:1; padding:var(--gap-md) var(--pad-x) var(--pad-y); display:grid; grid-template-columns:1fr 1fr 1fr; gap:0; border-top:1px solid rgba(249,207,0,0.25); }
+.cover-meta-col { font-family:var(--f-mono); font-size:var(--sz-caption); font-weight:400; line-height:1.6; color:var(--c-fg-2); }
+.cover-meta-col:last-child { text-align:right; }
+
+/* ── Chapter divider ─────────────────────────────────────────── */
+.slide--chapter { display:flex; flex-direction:column; justify-content:flex-end; padding-bottom:calc(var(--pad-y)*1.5); }
+.chapter-num { font-family:var(--f-mono); font-size:var(--sz-label); letter-spacing:0.22em; text-transform:uppercase; color:var(--c-fg-2); margin-bottom:var(--gap-lg); }
+
+/* ── Split layout ────────────────────────────────────────────── */
+.slide--split .slide-body { display:grid; grid-template-columns:1fr 1fr; gap:calc(var(--pad-x)*0.8); align-items:center; }
+.split-text { display:flex; flex-direction:column; gap:var(--gap-md); }
+
+/* ── List layout ─────────────────────────────────────────────── */
+.slide--list { display:flex; flex-direction:column; justify-content:center; }
+.slide--list .slide-body { display:grid; grid-template-columns:2fr 3fr; gap:calc(var(--pad-x)*0.8); align-items:center; }
+.list-head { display:flex; flex-direction:column; gap:var(--gap-md); }
+
+/* ── Compare layout ──────────────────────────────────────────── */
+.slide--compare .slide-body { display:grid; grid-template-columns:1fr 1fr; height:100%; }
+.compare-panel { display:flex; flex-direction:column; gap:var(--gap-md); padding:var(--gap-md) 0; }
+.compare-panel.left { padding-right:calc(var(--pad-x)*0.55); border-right:2px solid var(--c-fg-3); }
+.compare-panel.right { padding-left:calc(var(--pad-x)*0.55); }
+.compare-label { font-family:var(--f-mono); font-size:var(--sz-label); letter-spacing:0.16em; text-transform:uppercase; padding-bottom:var(--gap-sm); border-bottom:1px solid var(--c-border); }
+.compare-label.after { color:var(--c-accent); }
+
+/* ── Image placeholder ───────────────────────────────────────── */
+.img-placeholder { background:var(--c-bg-alt); display:flex; align-items:center; justify-content:center; font-family:var(--f-mono); font-size:var(--sz-label); letter-spacing:0.1em; color:var(--c-fg-3); width:100%; flex:1; }
+.img-box { background:var(--c-bg-alt); overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.img-box img { width:100%; height:100%; object-fit:contain; }
+
+/* ── Custom: full-image slide ────────────────────────────────── */
+.slide--fullimg { display:flex; flex-direction:column; }
+.slide--fullimg .slide-body { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.slide--fullimg .img-box { width:100%; height:100%; }
+
+/* ── Custom: 3-image row ─────────────────────────────────────── */
+.img-row { display:grid; gap:var(--gap-md); width:100%; height:100%; }
+.img-row.cols-2 { grid-template-columns:1fr 1fr; }
+.img-row.cols-3 { grid-template-columns:1fr 1fr 1fr; }
+
+/* ── Custom: table ───────────────────────────────────────────── */
+.tripo-table { width:100%; border-collapse:collapse; font-family:var(--f-body); font-size:var(--sz-body); }
+.tripo-table th { font-family:var(--f-mono); font-size:var(--sz-label); letter-spacing:0.12em; text-transform:uppercase; color:var(--c-fg-2); padding:1.2vh 1.5vw; border-bottom:1px solid var(--c-border); text-align:left; font-weight:400; }
+.tripo-table td { padding:1.4vh 1.5vw; border-bottom:1px solid var(--c-border); line-height:1.5; vertical-align:top; }
+.tripo-table tr:last-child td { border-bottom:none; }
+.tripo-table .row-label { font-family:var(--f-mono); font-size:var(--sz-caption); letter-spacing:0.08em; color:var(--c-fg-2); text-transform:uppercase; }
+.tripo-table .hi { color:var(--c-accent); font-weight:600; }
+.tripo-table .dim { color:var(--c-fg-2); }
+
+/* ── Cover accent bar ────────────────────────────────────────── */
+.accent-bar { display:inline-block; width:4px; height:1em; background:var(--c-accent); margin-right:0.4em; vertical-align:middle; }
+
+/* ── Mind map ────────────────────────────────────────────────── */
+.slide--mindmap { display:flex; flex-direction:column; }
+.mindmap-wrap { position:relative; flex:1; min-height:0; }
+.mindmap-svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+/* Step-reveal system: elements start hidden, revealed by JS click steps */
+.mm-step-item { opacity:0; transition:opacity 0.35s ease; }
+.mm-step-item.mm-revealed { opacity:1; }
+/* SVG lines */
+.mm-line { fill:none; stroke:rgba(249,207,0,0.4); stroke-width:1.8px; stroke-dasharray:300; stroke-dashoffset:300; }
+.mm-line.mm-step-item { opacity:0; transition:opacity 0s; }
+.mm-line.mm-revealed { opacity:1; animation:kDrawLine 0.5s var(--ease-enter) forwards; }
+/* Center auto-shown on slide enter */
+.mm-center-node { position:absolute; transform:translate(-50%,-50%); display:flex; align-items:center; justify-content:center; }
+/* Nodes */
+.mm-node { position:absolute; transform:translate(-50%,-50%); display:flex; align-items:center; justify-content:center; font-family:var(--f-body); font-size:1.3vw; font-weight:500; line-height:1.2; text-align:center; }
+.mm-center { width:9vw; height:9vw; background:var(--c-accent); color:var(--c-bg); border-radius:50%; font-family:var(--f-heading); font-size:2.8vw; font-weight:700; }
+.mm-branch { background:var(--c-bg-alt); border:1px solid rgba(249,207,0,0.5); color:var(--c-fg); padding:0.7vh 1.2vw; border-radius:4px; white-space:nowrap; font-size:1.3vw; }
+.mm-leaf   { background:transparent; border:1px solid var(--c-fg-3); color:var(--c-fg-2); padding:0.4vh 0.9vw; border-radius:4px; white-space:nowrap; font-size:1.05vw; }
+.mm-hint { position:absolute; bottom:0.5vh; left:50%; transform:translateX(-50%); font-family:var(--f-mono); font-size:0.85vw; color:rgba(249,207,0,0.28); letter-spacing:0.12em; white-space:nowrap; }
+
+/* ── Era/timeline layout ─────────────────────────────────────── */
+.era-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--gap-md); height:100%; }
+.era-card { background:var(--c-bg-alt); border:1px solid var(--c-border); padding:var(--gap-md) 1.5vw; display:flex; flex-direction:column; gap:var(--gap-sm); border-radius:2px; }
+.era-card.active { border-color:var(--c-accent); }
+.era-num { font-family:var(--f-mono); font-size:var(--sz-caption); letter-spacing:0.14em; color:var(--c-fg-2); text-transform:uppercase; }
+.era-title { font-family:var(--f-heading); font-size:var(--sz-h3); font-weight:700; color:var(--c-fg); line-height:1.05; }
+.era-card.active .era-title { color:var(--c-accent); }
+.era-items { list-style:none; display:flex; flex-direction:column; gap:0.6vh; padding:0; margin-top:auto; }
+.era-items li { font-family:var(--f-body); font-size:var(--sz-body); color:var(--c-fg-2); padding-left:1em; position:relative; }
+.era-items li::before { content:"\2014"; position:absolute; left:0; color:var(--c-fg-3); }
+.era-arch { margin-top:var(--gap-sm); padding-top:var(--gap-sm); border-top:1px solid var(--c-border); display:flex; flex-wrap:wrap; gap:0.5vh 0.5vw; }
+.era-pill { font-family:var(--f-mono); font-size:var(--sz-caption); padding:0.3vh 0.7vw; border:1px solid var(--c-border); color:var(--c-fg-3); border-radius:2px; }
+.era-card.active .era-pill { border-color:rgba(249,207,0,0.35); color:rgba(249,207,0,0.6); }
+
+/* ── Pipeline diagram ────────────────────────────────────────── */
+.pipeline { display:flex; align-items:center; gap:0; width:100%; }
+.pipe-node { flex:1; display:flex; flex-direction:column; align-items:center; gap:var(--gap-sm); }
+.pipe-box { background:var(--c-bg-alt); border:1px solid var(--c-border); padding:1.4vh 1vw; width:100%; text-align:center; font-family:var(--f-body); font-size:var(--sz-body); border-radius:2px; }
+.pipe-box.hi { border-color:var(--c-accent); color:var(--c-accent); }
+.pipe-arrow { flex:0 0 auto; color:var(--c-fg-3); font-size:1.6vw; padding:0 0.5vw; }
+.pipe-label { font-family:var(--f-mono); font-size:var(--sz-caption); color:var(--c-fg-2); letter-spacing:0.08em; }
+/* ── Token cells (slides 10/11) ─────────────────────────────── */
+.tok { display:inline-flex; align-items:center; justify-content:center; font-family:var(--f-mono); font-size:var(--sz-lead); padding:0.7vh 1vw; border:1px solid var(--c-border); color:var(--c-fg); border-radius:3px; white-space:nowrap; }
+.tok-hi { border-color:var(--c-accent); color:var(--c-accent); }
+.tok-bos { border-color:var(--c-accent); color:var(--c-accent); background:rgba(249,207,0,0.08); }
+.tok-dim { border-color:transparent; color:var(--c-fg-3); }
+.tok-sm { font-size:var(--sz-body); padding:0.4vh 0.6vw; }
+
+/* ── Tag pill ────────────────────────────────────────────────── */
+.tag { display:inline-block; font-family:var(--f-mono); font-size:var(--sz-caption); letter-spacing:0.1em; text-transform:uppercase; padding:0.3vh 0.7vw; border:1px solid var(--c-border); color:var(--c-fg-2); border-radius:2px; }
+.tag.hi { border-color:var(--c-accent); color:var(--c-accent); }
+.tag.warn { border-color:rgba(255,80,80,0.4); color:rgba(255,100,100,0.7); }
+
+/* ── Two-col bullets (for dense feedback slides) ─────────────── */
+.two-col-bullets { display:grid; grid-template-columns:1fr 1fr; gap:var(--gap-md) calc(var(--pad-x)*0.8); align-content:start; }
+.topic-block { display:flex; flex-direction:column; gap:0.6vh; }
+.topic-label { font-family:var(--f-mono); font-size:var(--sz-body); letter-spacing:0.12em; text-transform:uppercase; color:var(--c-accent); padding-bottom:0.5vh; border-bottom:1px solid rgba(249,207,0,0.3); margin-bottom:0.6vh; }
+.topic-body { font-family:var(--f-body); font-size:var(--sz-body); color:var(--c-fg); line-height:1.55; }
+.topic-note { font-family:var(--f-mono); font-size:var(--sz-body); color:rgba(249,207,0,0.45); margin-top:0.4vh; }
+
+/* ── Statement / quote ───────────────────────────────────────── */
+.slide--statement { display:flex; flex-direction:column; justify-content:flex-end; padding-bottom:calc(var(--pad-y)*1.5); }
+.slide--quote { display:flex; flex-direction:column; justify-content:center; }
+.quote-text { font-family:var(--f-heading); font-size:3.6vw; font-weight:700; line-height:1.05; letter-spacing:-0.02em; text-transform:uppercase; max-width:82%; margin-bottom:var(--gap-lg); }
+.quote-attr { display:flex; flex-direction:column; gap:0.4vh; }
+
+/* ── End slide ───────────────────────────────────────────────── */
+.slide--end { display:flex; flex-direction:column; justify-content:space-between; }
+</style>
+</head>
+<body>
+<nav id="nav-dots"></nav>
+<div id="slide-counter"></div>
+<div id="deck">
+
+<!-- ═══ SLIDE 1 · COVER ══════════════════════════════════════════════ -->
+<section class="slide dark slide--cover">
+  <div class="cover-logo" data-anim="fade-in" data-delay="0">
+    <svg width="660" height="156" viewBox="0 0 660 156" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#clip0_2218_18358)">
+<path d="M259.605 61.8039L259.494 112.301L243.527 112.258C243.29 112.258 243.101 112.065 243.101 111.831L243.253 61.7734" fill="white"/>
+<path d="M211.575 54.758C211.338 54.758 211.148 54.5671 211.148 54.3313L211.192 42.3058L291.291 42.4935C291.528 42.4935 291.717 42.6844 291.717 42.9202L291.709 54.5174C291.709 54.7516 291.517 54.9441 291.283 54.9441" fill="white"/>
+<path d="M328.02 73.5326L328.044 111.918C328.044 112.123 327.877 112.29 327.669 112.29L312.369 112.282C312.12 112.282 311.918 112.08 311.918 111.831V42.3956C332.12 42.3956 352.353 42.402 372.62 42.4165C379.688 42.4165 387.34 44.7523 387.812 53.2468C387.987 56.4313 388.019 61.6515 387.908 68.9059C387.844 73.1957 387.777 75.546 387.713 75.9566C385.735 88.0928 370.85 85.9271 362.659 85.7699L395.399 112.336L372.511 112.269C372.028 112.261 371.609 112.094 371.253 111.762L331.607 73.9305C331.458 73.7877 331.56 73.539 331.766 73.5406L366.538 73.8711C370.322 73.8503 372.212 72.0743 372.204 68.545C372.198 65.6397 372.201 62.7151 372.219 59.7777C372.233 56.9125 369.915 54.5655 367.048 54.5511C353.683 54.4837 340.806 54.4725 328.418 54.5158C328.201 54.5158 328.023 54.6906 328.023 54.9104L328.012 73.5326" fill="white"/>
+<path d="M437.519 42.4036H421.165V112.29H437.519V42.4036Z" fill="white"/>
+<path d="M528.393 73.0834C529.742 73.0834 533.687 70.645 533.687 68.1728L533.708 59.513C533.719 56.7906 531.369 54.5735 528.457 54.5591L490.175 54.4308C490.064 54.4308 489.976 54.519 489.973 54.6297L489.525 111.6C489.525 112.059 489.297 112.291 488.834 112.291L473.598 112.28C473.491 112.28 473.402 112.192 473.402 112.084V42.4598C473.402 42.4133 473.441 42.3716 473.491 42.3716C491.664 42.4325 511.304 42.4213 532.405 42.3427C541.753 42.2994 549.657 44.5871 549.449 55.5826C549.353 60.713 549.37 65.6028 549.502 70.2599C549.645 75.3551 548.557 78.7737 546.465 81.0293C543.479 84.2506 539.347 85.056 532.206 85.056C507.441 85.056 503.227 84.9854 503.227 84.9854L503.219 73.223C503.219 73.223 519.459 73.085 528.393 73.085" fill="white"/>
+<path d="M659.753 100.235C659.764 106.821 654.435 112.17 647.848 112.182L585.261 112.291C578.675 112.303 573.33 106.973 573.317 100.386L573.235 54.4163C573.224 47.8309 578.553 42.4823 585.141 42.4727L647.727 42.362C654.313 42.3507 659.658 47.6801 659.671 54.2671L659.753 100.237V100.235ZM643.547 54.8655H589.575V99.1028H643.547V54.8655Z" fill="white"/>
+<path d="M91.5371 27.1199C91.6157 26.9771 91.5692 26.7974 91.4344 26.7188C91.3911 26.6947 91.343 26.6803 91.2964 26.6803L46.9709 26.6915C46.48 26.6915 46.026 26.4333 45.7741 26.0129L30.6941 0.376943C30.6267 0.253415 30.6733 0.0994067 30.7936 0.0352365C30.8321 0.0143812 30.8722 0.00315144 30.9139 0.00315144C70.6128 -0.00326558 108.497 -5.70702e-05 144.566 0.0143812C159.67 0.0143812 171.309 11.1495 173.5 26.0226C173.558 26.4701 173.365 26.6931 172.921 26.6931H124.458C124.092 26.6931 123.752 26.8889 123.568 27.2049C113.31 44.7025 103.105 62.075 92.9504 79.3143C90.9339 82.7233 86.2992 83.7854 83.0201 81.7816C81.6533 80.941 80.4453 79.5902 79.3913 77.7261C77.2528 73.9336 75.1239 70.3449 73.0144 66.9615C71.4053 64.3835 71.3203 61.8456 72.7593 59.3558C79.2276 48.1533 85.4874 37.4096 91.5355 27.1199" fill="#F9CF00"/>
+<path d="M77.8688 115.572C81.9885 122.599 91.8659 122.191 95.867 115.364C109.814 91.5596 123.686 67.8856 137.488 44.3448C137.584 44.1779 137.765 44.0753 137.959 44.0753H168.787C168.901 44.0785 168.992 44.1747 168.986 44.2886C168.986 44.3207 168.978 44.3528 168.962 44.3801C150.123 76.4235 131.136 108.764 111.999 141.407C102.717 157.246 81.0693 159.601 67.3224 148.246C65.0925 146.403 62.5177 142.987 59.5964 137.998C41.3383 106.752 22.7306 75.0406 3.77632 42.8609C-3.99469 29.6707 0.822884 13.9666 12.789 4.9475C12.8805 4.88012 13.0024 4.90418 13.0585 5.00044C34.1465 40.9261 55.751 77.7839 77.8688 115.574" fill="white"/>
+</g>
+<defs>
+<clipPath id="clip0_2218_18358">
+<rect width="659.753" height="155.316" fill="white"/>
+</clipPath>
+</defs>
+</svg>
+  </div>
+  <div class="cover-type">
+    <div>
+      <h1 class="display" style="color:var(--c-fg);line-height:0.88;white-space:nowrap;font-size:clamp(3rem,7.5vw,10vw);" data-anim="fade-up" data-delay="1">
+        Tripo 背后的算法
+      </h1>
+      <p class="lead" style="color:var(--c-fg-2);margin-top:2.5vh;text-transform:none;font-weight:400;max-width:55ch;" data-anim="fade-up" data-delay="2">
+        从过去到未来 — The geometry, generation, and retopology pipeline behind Tripo AI
+      </p>
+    </div>
+  </div>
+  <div class="cover-meta" data-anim="fade-in" data-delay="3">
+    <div class="cover-meta-col">梁鼎<br/>Tripo AI</div>
+    <div class="cover-meta-col" style="text-align:center">Tripo背后的算法：从过去到未来</div>
+    <div class="cover-meta-col">2026年5月18日</div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 2 · 提纲 ══════════════════════════════════════════════ -->
+<section class="slide dark slide--chapter">
+  <div class="chapter-num" data-anim="fade-in" data-delay="0">AGENDA</div>
+  <div data-anim="fade-up" data-delay="1" style="display:flex;flex-direction:column;gap:2.5vh;">
+    <div style="display:flex;align-items:baseline;gap:1.5vw;">
+      <span style="font-family:var(--f-mono);font-size:var(--sz-caption);color:var(--c-fg-2);letter-spacing:0.14em;flex-shrink:0;">01</span>
+      <h1 class="h1">算法介绍</h1>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:1.5vw;">
+      <span style="font-family:var(--f-mono);font-size:var(--sz-caption);color:var(--c-fg-2);letter-spacing:0.14em;flex-shrink:0;">02</span>
+      <h1 class="h1" style="color:var(--c-fg-2);">问题反馈</h1>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:1.5vw;">
+      <span style="font-family:var(--f-mono);font-size:var(--sz-caption);color:var(--c-fg-2);letter-spacing:0.14em;flex-shrink:0;">03</span>
+      <h1 class="h1" style="color:var(--c-fg-2);">未来规划</h1>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 3 · 从单点能力到完整工作站 (CLICK STEP MIND MAP) ════ -->
+<section class="slide dark slide--mindmap" id="slide-mindmap">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">Tripo 能力全景</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">03 / 25</span>
+  </div>
+  <h2 class="h2" style="margin-bottom:1vh;" data-anim="fade-up" data-delay="1">从单点能力到完整工作站</h2>
+  <div class="mindmap-wrap" style="flex:1;min-height:0;position:relative;">
+    <!-- SVG connection lines -->
+    <svg class="mindmap-svg" viewBox="0 0 1000 520" preserveAspectRatio="xMidYMid meet">
+      <!-- step 1: 生图 -->
+      <line class="mm-line mm-step-item" data-step="1" x1="500" y1="260" x2="390" y2="45"/>
+      <!-- step 2: 图生3D -->
+      <line class="mm-line mm-step-item" data-step="2" x1="500" y1="260" x2="500" y2="78"/>
+      <!-- step 3: 几何 + subs -->
+      <line class="mm-line mm-step-item" data-step="3" x1="500" y1="260" x2="720" y2="92"/>
+      <line class="mm-line mm-step-item" data-step="3" x1="720" y1="92" x2="820" y2="55" style="stroke-width:1px;"/>
+      <line class="mm-line mm-step-item" data-step="3" x1="720" y1="92" x2="840" y2="104" style="stroke-width:1px;"/>
+      <!-- step 4: 高清纹理 + sub -->
+      <line class="mm-line mm-step-item" data-step="4" x1="500" y1="260" x2="882" y2="205"/>
+      <line class="mm-line mm-step-item" data-step="4" x1="882" y1="205" x2="957" y2="175" style="stroke-width:1px;"/>
+      <!-- step 5: H/P系列 + subs -->
+      <line class="mm-line mm-step-item" data-step="5" x1="500" y1="260" x2="852" y2="332"/>
+      <line class="mm-line mm-step-item" data-step="5" x1="852" y1="332" x2="957" y2="306" style="stroke-width:1px;"/>
+      <line class="mm-line mm-step-item" data-step="5" x1="852" y1="332" x2="957" y2="352" style="stroke-width:1px;"/>
+      <!-- step 6: 分部件 + subs -->
+      <line class="mm-line mm-step-item" data-step="6" x1="500" y1="260" x2="700" y2="428"/>
+      <line class="mm-line mm-step-item" data-step="6" x1="700" y1="428" x2="762" y2="474" style="stroke-width:1px;"/>
+      <line class="mm-line mm-step-item" data-step="6" x1="700" y1="428" x2="820" y2="466" style="stroke-width:1px;"/>
+      <!-- step 7: 动画 + subs -->
+      <line class="mm-line mm-step-item" data-step="7" x1="500" y1="260" x2="300" y2="428"/>
+      <line class="mm-line mm-step-item" data-step="7" x1="300" y1="428" x2="218" y2="474" style="stroke-width:1px;"/>
+      <line class="mm-line mm-step-item" data-step="7" x1="300" y1="428" x2="160" y2="452" style="stroke-width:1px;"/>
+      <!-- step 8: 重拓扑 + sub -->
+      <line class="mm-line mm-step-item" data-step="8" x1="500" y1="260" x2="140" y2="332"/>
+      <line class="mm-line mm-step-item" data-step="8" x1="140" y1="332" x2="58" y2="354" style="stroke-width:1px;"/>
+      <!-- step 9: 智能重拓扑 -->
+      <line class="mm-line mm-step-item" data-step="9" x1="500" y1="260" x2="118" y2="205"/>
+      <!-- step 10: 人形 + sub -->
+      <line class="mm-line mm-step-item" data-step="10" x1="500" y1="260" x2="280" y2="92"/>
+      <line class="mm-line mm-step-item" data-step="10" x1="280" y1="92" x2="174" y2="62" style="stroke-width:1px;"/>
+    </svg>
+
+    <!-- Center node: auto-shown (not step-gated) -->
+    <div class="mm-node mm-center mm-step-item" data-step="0" style="left:50%;top:50%;">Tripo</div>
+
+    <!-- Step 1: 生图 -->
+    <div class="mm-node mm-branch mm-step-item" data-step="1" style="left:39%;top:9%;">生图</div>
+    <!-- Step 2: 图生3D -->
+    <div class="mm-node mm-branch mm-step-item" data-step="2" style="left:50%;top:15%;">图生3D</div>
+    <!-- Step 3: 几何 -->
+    <div class="mm-node mm-branch mm-step-item" data-step="3" style="left:72%;top:18%;">几何</div>
+    <div class="mm-node mm-leaf   mm-step-item" data-step="3" style="left:82%;top:11%;">纹理</div>
+    <div class="mm-node mm-leaf   mm-step-item" data-step="3" style="left:84%;top:20%;">PBR</div>
+    <!-- Step 4: 高清纹理 -->
+    <div class="mm-node mm-branch mm-step-item" data-step="4" style="left:88%;top:39%;">高清纹理</div>
+    <div class="mm-node mm-leaf   mm-step-item" data-step="4" style="left:96%;top:34%;">智能笔刷</div>
+    <!-- Step 5: H/P系列 -->
+    <div class="mm-node mm-branch mm-step-item" data-step="5" style="left:85%;top:64%;">H / P 系列</div>
+    <div class="mm-node mm-leaf   mm-step-item" data-step="5" style="left:96%;top:59%;">H系列</div>
+    <div class="mm-node mm-leaf   mm-step-item" data-step="5" style="left:96%;top:68%;">P系列</div>
+    <!-- Step 6: 分部件 -->
+    <div class="mm-node mm-branch mm-step-item" data-step="6" style="left:70%;top:82%;">分部件</div>
+    <div class="mm-node mm-leaf   mm-step-item" data-step="6" style="left:76%;top:91%;">拆分</div>
+    <div class="mm-node mm-leaf   mm-step-item" data-step="6" style="left:84%;top:90%;">补全</div>
+    <!-- Step 7: 动画 -->
+    <div class="mm-node mm-branch mm-step-item" data-step="7" style="left:30%;top:82%;">动画</div>
+    <div class="mm-node mm-leaf   mm-step-item" data-step="7" style="left:22%;top:91%;">绑骨</div>
+    <div class="mm-node mm-leaf   mm-step-item" data-step="7" style="left:16%;top:87%;">重定向</div>
+    <!-- Step 8: 重拓扑 -->
+    <div class="mm-node mm-branch mm-step-item" data-step="8" style="left:14%;top:64%;">重拓扑</div>
+    <div class="mm-node mm-leaf   mm-step-item" data-step="8" style="left:6%;top:68%;">四边面</div>
+    <!-- Step 9: 智能重拓扑 -->
+    <div class="mm-node mm-branch mm-step-item" data-step="9" style="left:12%;top:39%;">智能重拓扑</div>
+    <!-- Step 10: 人形 -->
+    <div class="mm-node mm-branch mm-step-item" data-step="10" style="left:28%;top:18%;">人形</div>
+    <div class="mm-node mm-leaf   mm-step-item" data-step="10" style="left:17%;top:12%;">其他生物</div>
+
+    <!-- Click hint -->
+    <div class="mm-hint" id="mm-hint">点击继续 →</div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">03 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 4 · 几何基础模型 ══════════════════════════════════════ -->
+<section class="slide dark">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">几何基础模型</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">04 / 25</span>
+  </div>
+  <div class="slide-body" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--gap-md);">
+    <!-- H3.1 card -->
+    <div data-anim="fade-up" data-delay="1" style="display:flex;flex-direction:column;gap:var(--gap-md);">
+      <div style="font-family:var(--f-heading);font-size:var(--sz-h3);font-weight:700;color:var(--c-accent);">Tripo H3.1</div>
+      <div class="img-box" style="flex:1;min-height:0;background:var(--c-bg-alt);">
+        <img src="images/slide04_img00.gif" style="width:100%;height:100%;object-fit:contain;" />
+      </div>
+      <table class="tripo-table">
+        <tr><td class="row-label">生成速度</td><td class="hi">5s以内</td></tr>
+        <tr><td class="row-label">面数</td><td>500 – 2万面</td></tr>
+        <tr><td class="row-label">特征</td><td>清晰边缘，干净拓扑</td></tr>
+        <tr><td class="row-label" style="border-bottom:none">适用</td><td style="border-bottom:none;color:var(--c-fg-2);font-size:var(--sz-caption);">游戏管线 / UGC / 移动端</td></tr>
+      </table>
+    </div>
+    <!-- P1.0 card -->
+    <div data-anim="fade-up" data-delay="2" style="display:flex;flex-direction:column;gap:var(--gap-md);">
+      <div style="font-family:var(--f-heading);font-size:var(--sz-h3);font-weight:700;color:var(--c-fg);">Tripo P1.0</div>
+      <div class="img-box" style="flex:1;min-height:0;background:var(--c-bg-alt);">
+        <img src="images/slide04_img01.gif" style="width:100%;height:100%;object-fit:contain;" />
+      </div>
+      <table class="tripo-table">
+        <tr><td class="row-label">生成速度</td><td class="dim">30 – 60s</td></tr>
+        <tr><td class="row-label">面数</td><td>100万 – 200万面</td></tr>
+        <tr><td class="row-label">特征</td><td>高保真极致细节</td></tr>
+        <tr><td class="row-label" style="border-bottom:none">适用</td><td style="border-bottom:none;color:var(--c-fg-2);font-size:var(--sz-caption);">3A / 3D打印 / 工业设计</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">04 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 5 · Tripo H 系列在做什么 ══════════════════════════════ -->
+<section class="slide dark" style="display:flex;flex-direction:column;">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">H 系列</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">05 / 25</span>
+  </div>
+  <div class="slide-body" style="display:flex;flex-direction:column;gap:var(--gap-md);">
+    <div data-anim="fade-up" data-delay="1">
+      <p class="label" style="color:var(--c-accent);letter-spacing:0.12em;margin-bottom:0.5vh;">终极目标</p>
+      <h2 class="h2">Tripo H 系列在做什么</h2>
+      <p class="lead" style="color:var(--c-fg-2);font-weight:400;text-transform:none;margin-top:0.6vh;">
+        通过 AI 自动根据图像 / 文本 / 其他各种输入，获取高保真、极致细节的 3D 模型
+      </p>
+    </div>
+    <div data-anim="fade-in" data-delay="2" style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:var(--gap-md);min-height:0;">
+      <div class="img-box" style="height:100%;min-height:0;"><img src="images/slide05_img02.gif" style="width:100%;height:100%;object-fit:contain;" /></div>
+      <div class="img-box" style="height:100%;min-height:0;"><img src="images/slide05_img03.gif" style="width:100%;height:100%;object-fit:contain;" /></div>
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">05 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 6 · H 系列技术路线 ══════════════════════════════════ -->
+<section class="slide dark">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">技术演进</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">06 / 25</span>
+  </div>
+  <div class="slide-body" style="flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--gap-sm);">
+  <h2 class="h2" data-anim="fade-up" data-delay="1">Tripo H 系列的技术路线发展</h2>
+  <div style="flex:1;min-height:0;display:flex;gap:4vw;" data-anim="fade-in" data-delay="2">
+    <!-- Left: era bullet list -->
+    <div style="flex:0 0 38%;display:flex;flex-direction:column;justify-content:center;gap:2.5vh;">
+      <div>
+        <div style="font-size:var(--sz-label);color:var(--c-fg-3);margin-bottom:0.4vh;">1.0 时代</div>
+        <div style="font-size:var(--sz-h3);font-family:var(--f-display);font-weight:700;color:var(--c-fg);margin-bottom:0.6vh;">重建模型</div>
+        <ul class="bullet-list" style="color:var(--c-fg-2);">
+          <li>大量数据</li>
+          <li>一次推理，速度快</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:var(--sz-label);color:var(--c-fg-3);margin-bottom:0.4vh;">2.0 时代</div>
+        <div style="font-size:var(--sz-h3);font-family:var(--f-display);font-weight:700;color:var(--c-fg);margin-bottom:0.6vh;">生成模型</div>
+        <ul class="bullet-list" style="color:var(--c-fg-2);">
+          <li>VAE 压缩表征</li>
+          <li>DiT 进行生成</li>
+        </ul>
+      </div>
+      <div>
+        <div style="font-size:var(--sz-label);color:var(--c-accent);margin-bottom:0.4vh;">3.0 时代</div>
+        <div style="font-size:var(--sz-h3);font-family:var(--f-display);font-weight:700;color:var(--c-accent);margin-bottom:0.6vh;">级联生成</div>
+        <ul class="bullet-list" style="color:var(--c-fg-2);">
+          <li>由粗到细，多阶段</li>
+          <li>每级独立 Transformer</li>
+        </ul>
+      </div>
+    </div>
+    <!-- Right: Transformer diagram -->
+    <div class="img-box" style="flex:1;min-height:0;">
+      <img src="images/slide06_transformer_real.png" style="width:100%;height:100%;object-fit:contain;object-position:center;" />
+    </div>
+  </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">06 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 7 · H3.1 差异化 ════════════════════════════════════ -->
+<section class="slide dark" style="display:flex;flex-direction:column;">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">H3.1 优势</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">07 / 25</span>
+  </div>
+  <div class="slide-body" style="display:flex;flex-direction:column;gap:var(--gap-md);">
+    <div data-anim="fade-up" data-delay="1">
+      <h2 class="h2" style="line-height:0.9;">相比于其他家，Tripo H3.1 有什么不同</h2>
+      <div style="display:flex;align-items:center;gap:2vw;margin-top:1vh;flex-wrap:wrap;">
+        <span class="tag hi" style="font-size:var(--sz-body);padding:0.5vh 1.2vw;">更好的 VAE</span>
+        <ul class="bullet-list" style="flex-direction:row;gap:2.5vw;padding-left:0;flex-wrap:wrap;">
+          <li style="white-space:nowrap;">SparseFlex 表征 → 更 sharp 的几何建模</li>
+          <li style="white-space:nowrap;">无需水密化处理，直接在原始 Mesh 上监督训练</li>
+          <li style="white-space:nowrap;">高效训练策略，可在高分辨率上训练</li>
+        </ul>
+      </div>
+    </div>
+    <div data-anim="fade-in" data-delay="2" class="img-box" style="flex:1;min-height:0;">
+      <img src="images/slide07_img02.png" style="width:100%;height:100%;object-fit:contain;" />
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">07 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 8 · 级联增加几何细节 ══════════════════════════════════ -->
+<section class="slide dark slide--fullimg">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">级联生成</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">08 / 25</span>
+  </div>
+  <h2 class="h2" style="margin-bottom:1.5vh;" data-anim="fade-up" data-delay="1">级联增加几何细节</h2>
+  <div class="slide-body" data-anim="fade-in" data-delay="2">
+    <div class="img-row cols-3" style="height:100%;">
+      <div class="img-box"><img src="images/slide08_img02.png" /></div>
+      <div class="img-box"><img src="images/slide08_img03.png" /></div>
+      <div class="img-box"><img src="images/slide08_img04.png" /></div>
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">08 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 9 · P1.0之前 ═══════════════════════════════════════ -->
+<section class="slide dark">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">P 系列背景</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">09 / 25</span>
+  </div>
+  <div class="slide-body" style="display:flex;flex-direction:column;gap:var(--gap-md);">
+    <h2 class="h2" data-anim="fade-up" data-delay="1">在 P1.0 之前我们有什么</h2>
+    <div style="flex:1;display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:var(--gap-md);min-height:0;" data-anim="fade-up" data-delay="2">
+      <!-- Col 1: 图片输入 -->
+      <div style="display:flex;flex-direction:column;">
+        <div class="img-box" style="flex:1;min-height:0;"><img src="images/slide09_img01.png" style="width:100%;height:100%;object-fit:contain;"/></div>
+        <div style="text-align:center;padding:1vh 0;height:10vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.4vh;">
+          <div style="font-family:var(--f-heading);font-size:var(--sz-h3);font-weight:700;color:var(--c-fg);">图片</div>
+          <div style="font-family:var(--f-mono);font-size:var(--sz-caption);color:var(--c-fg-2);">图片输入</div>
+          <div style="height:2.4vh;"></div>
+        </div>
+      </div>
+      <!-- Arrow 1 -->
+      <div style="display:flex;align-items:center;padding-bottom:10vh;font-size:2.5vw;color:var(--c-fg-3);">→</div>
+      <!-- Col 2: 高模 -->
+      <div style="display:flex;flex-direction:column;">
+        <div class="img-box" style="flex:1;min-height:0;"><img src="images/slide09_img02.png" style="width:100%;height:100%;object-fit:contain;"/></div>
+        <div style="text-align:center;padding:1vh 0;height:10vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.4vh;">
+          <div style="font-family:var(--f-heading);font-size:var(--sz-h3);font-weight:700;color:var(--c-fg);">高模</div>
+          <div style="font-family:var(--f-mono);font-size:var(--sz-caption);color:var(--c-fg-2);">细节多，面数高</div>
+          <div class="tag hi" style="margin-top:0.2vh;">~1分钟</div>
+        </div>
+      </div>
+      <!-- Arrow 2 -->
+      <div style="display:flex;align-items:center;padding-bottom:10vh;font-size:2.5vw;color:var(--c-fg-3);">→</div>
+      <!-- Col 3: 网格模型 -->
+      <div style="display:flex;flex-direction:column;">
+        <div class="img-box" style="flex:1;min-height:0;"><img src="images/slide09_img03_wireframe.png" style="width:100%;height:100%;object-fit:contain;"/></div>
+        <div style="text-align:center;padding:1vh 0;height:10vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.4vh;">
+          <div style="font-family:var(--f-heading);font-size:var(--sz-h3);font-weight:700;color:var(--c-fg);">网格模型</div>
+          <div style="font-family:var(--f-mono);font-size:var(--sz-caption);color:var(--c-fg-2);">布线合理，面数低</div>
+          <div class="tag" style="margin-top:0.2vh;">3–5分钟</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">09 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 10 · 旧路线 (1) ══════════════════════════════════════ -->
+<section class="slide dark">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">P1.0 动机</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">10 / 25</span>
+  </div>
+  <div class="slide-body" style="display:flex;flex-direction:column;gap:1.5vh;">
+    <div data-anim="fade-up" data-delay="1">
+      <div class="tag" style="margin-bottom:0.8vh;">自回归生成 Mesh</div>
+      <h2 class="h2">为什么我们想做 P1.0：旧路线</h2>
+      <p class="lead" style="color:var(--c-fg-2);text-transform:none;font-weight:400;margin-top:0.6vh;">
+        是目前所有重拓扑方案（Tripo、Meshy、Hunyuan）的底层算法。
+        本质：把 Mesh 变成一个<span style="color:var(--c-accent);font-weight:600;">有顺序的一维序列</span>，再自回归地生成。
+      </p>
+    </div>
+    <div data-anim="fade-in" data-delay="2" class="img-box" style="flex:1;min-height:0;">
+      <img src="images/slide10_diagram.png" style="width:100%;height:100%;object-fit:contain;" />
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">10 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 11 · 旧路线 (2) ══════════════════════════════════════ -->
+<section class="slide dark" style="display:flex;flex-direction:column;">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">P1.0 动机</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">11 / 25</span>
+  </div>
+  <div class="slide-body" style="display:flex;flex-direction:column;gap:1.5vh;">
+    <h2 class="h2" data-anim="fade-up" data-delay="1">为什么我们想做 P1.0：旧路线</h2>
+    <!-- Top grid: mini token diagram + problems -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:2vw;flex:1;min-height:0;" data-anim="fade-up" data-delay="2">
+      <!-- Left: compact token diagram -->
+      <div style="display:flex;flex-direction:column;gap:0.8vh;justify-content:center;">
+        <div style="font-family:var(--f-mono);font-size:var(--sz-caption);color:var(--c-fg-3);letter-spacing:0.1em;text-transform:uppercase;">Mesh → 一维序列 → Mesh LLM</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:0.5vh;">
+          <span class="tok tok-sm">x<sub>1</sub></span><span class="tok tok-sm">y<sub>1</sub></span><span class="tok tok-sm tok-hi">z<sub>1</sub></span>
+          <span class="tok tok-sm">x<sub>2</sub></span><span class="tok tok-sm">y<sub>2</sub></span><span class="tok tok-sm tok-hi">z<sub>2</sub></span>
+          <span class="tok tok-sm">x<sub>3</sub></span><span class="tok tok-sm">y<sub>3</sub></span><span class="tok tok-sm tok-hi">z<sub>3</sub></span>
+          <span class="tok tok-sm tok-dim">…</span>
+        </div>
+        <svg width="100%" height="2vh" viewBox="0 0 200 20" preserveAspectRatio="none">
+          <line x1="10" y1="10" x2="180" y2="10" stroke="var(--c-fg-3)" stroke-width="1.5"/>
+          <polygon points="180,6 190,10 180,14" fill="var(--c-fg-3)"/>
+        </svg>
+        <div style="padding:1.2vh 1.5vw;background:#1c1c1a;border:1.5px solid var(--c-accent);border-radius:6px;text-align:center;">
+          <div style="font-family:var(--f-display);font-size:var(--sz-body);color:var(--c-accent);">Mesh LLM</div>
+          <div style="font-family:var(--f-mono);font-size:0.75vw;color:var(--c-fg-3);margin-top:0.2vh;">自回归 Transformer</div>
+        </div>
+        <svg width="100%" height="2vh" viewBox="0 0 200 20" preserveAspectRatio="none">
+          <line x1="10" y1="10" x2="180" y2="10" stroke="var(--c-fg-3)" stroke-width="1.5"/>
+          <polygon points="180,6 190,10 180,14" fill="var(--c-fg-3)"/>
+        </svg>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+          <span class="tok tok-sm tok-bos">BOS</span><span class="tok tok-sm">x<sub>1</sub></span><span class="tok tok-sm">y<sub>1</sub></span><span class="tok tok-sm tok-hi">z<sub>1</sub></span>
+          <span class="tok tok-sm">x<sub>2</sub></span><span class="tok tok-sm tok-dim">…</span>
+        </div>
+      </div>
+      <!-- Right: problems -->
+      <div style="display:flex;flex-direction:column;gap:1vh;justify-content:center;padding-left:1vw;border-left:2px solid var(--c-border);">
+        <div style="font-size:var(--sz-h3);font-family:var(--f-display);color:var(--c-fg);">看上去十分理想，但是…</div>
+        <ul class="bullet-list" style="font-size:var(--sz-lead);">
+          <li>网格生成十分缓慢 <span style="color:var(--c-fg-3);">（数分钟）</span></li>
+          <li>生成过程容易中断</li>
+          <li>面数控制非常不稳定 <span style="color:var(--c-fg-3);">（至今无成熟功能）</span></li>
+          <li>图片直出泛化性很差 <span style="color:var(--c-fg-3);">（至今无成熟功能）</span></li>
+        </ul>
+      </div>
+    </div>
+    <!-- Bottom: competitor image pipeline -->
+    <div data-anim="fade-up" data-delay="3" style="height:28vh;min-height:0;display:flex;align-items:center;gap:1.2vw;border-top:1px solid var(--c-border);padding-top:1.2vh;">
+      <!-- Image 1: flower input -->
+      <div style="flex:1;height:100%;display:flex;flex-direction:column;align-items:center;gap:0.5vh;min-width:0;">
+        <div class="img-box" style="flex:1;width:100%;min-height:0;">
+          <img src="images/slide11_flower_input.png" style="width:100%;height:100%;object-fit:contain;"/>
+        </div>
+        <div style="font-family:var(--f-mono);font-size:var(--sz-caption);color:var(--c-fg-3);text-align:center;">输入图片</div>
+      </div>
+      <!-- Arrow + label -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.4vh;flex-shrink:0;">
+        <div style="font-family:var(--f-mono);font-size:var(--sz-caption);color:var(--c-fg-2);white-space:nowrap;">Hunyuan 高模</div>
+        <svg width="4vw" height="2vh" viewBox="0 0 60 20">
+          <line x1="0" y1="10" x2="48" y2="10" stroke="var(--c-fg-3)" stroke-width="1.5"/>
+          <polygon points="48,6 58,10 48,14" fill="var(--c-fg-3)"/>
+        </svg>
+      </div>
+      <!-- Image 2: highpoly -->
+      <div style="flex:1;height:100%;display:flex;flex-direction:column;align-items:center;gap:0.5vh;min-width:0;">
+        <div class="img-box" style="flex:1;width:100%;min-height:0;">
+          <img src="images/slide11_highpoly.png" style="width:100%;height:100%;object-fit:contain;"/>
+        </div>
+        <div style="font-family:var(--f-mono);font-size:var(--sz-caption);color:var(--c-fg-3);text-align:center;">高模（自动拓扑前）</div>
+      </div>
+      <!-- Arrow + label -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.4vh;flex-shrink:0;">
+        <div style="font-family:var(--f-mono);font-size:var(--sz-caption);color:var(--c-fg-2);white-space:nowrap;">Hunyuan 重拓扑</div>
+        <svg width="4vw" height="2vh" viewBox="0 0 60 20">
+          <line x1="0" y1="10" x2="48" y2="10" stroke="var(--c-fg-3)" stroke-width="1.5"/>
+          <polygon points="48,6 58,10 48,14" fill="var(--c-fg-3)"/>
+        </svg>
+      </div>
+      <!-- Image 3: wireframe -->
+      <div style="flex:1;height:100%;display:flex;flex-direction:column;align-items:center;gap:0.5vh;min-width:0;">
+        <div class="img-box" style="flex:1;width:100%;min-height:0;">
+          <img src="images/slide11_wireframe.png" style="width:100%;height:100%;object-fit:contain;"/>
+        </div>
+        <div style="font-family:var(--f-mono);font-size:var(--sz-caption);color:var(--c-fg-3);text-align:center;">重拓扑结果（低面数网格）</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">11 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 12 · P1.0 新路线 ════════════════════════════════════ -->
+<section class="slide dark slide--compare">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">P1.0 路线对比</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">12 / 25</span>
+  </div>
+  <h2 class="h2" style="margin-bottom:2vh;" data-anim="fade-up" data-delay="1">P1.0 的出现：选择更合理的路线</h2>
+  <div class="slide-body" style="height:auto;">
+    <div class="compare-panel left" data-anim="fade-up" data-delay="2">
+      <div class="compare-label after">P1.0 路线</div>
+      <table class="tripo-table">
+        <tr><td class="row-label">生成速度</td><td class="hi">快（数秒）</td></tr>
+        <tr><td class="row-label">面数控制</td><td class="hi">强</td></tr>
+        <tr><td class="row-label" style="border-bottom:none">图生 3D</td><td class="hi" style="border-bottom:none">泛化性强</td></tr>
+      </table>
+    </div>
+    <div class="compare-panel right" data-anim="fade-up" data-delay="3">
+      <div class="compare-label">自回归路线</div>
+      <table class="tripo-table">
+        <tr><td class="row-label">生成速度</td><td class="dim">慢（数分钟）</td></tr>
+        <tr><td class="row-label">面数控制</td><td class="dim">很弱</td></tr>
+        <tr><td class="row-label" style="border-bottom:none">图生 3D</td><td class="dim" style="border-bottom:none">泛化性差</td></tr>
+      </table>
+    </div>
+  </div>
+  <p class="lead" style="color:var(--c-accent);margin-top:2vh;font-weight:600;" data-anim="fade-up" data-delay="4">
+    一下拥有了我们希望的几乎一切良好性质！
+  </p>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">12 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 13 · 纹理贴图 ══════════════════════════════════════ -->
+<section class="slide dark" style="display:flex;flex-direction:column;">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">纹理系统</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">13 / 25</span>
+  </div>
+  <div class="slide-body" style="display:flex;flex-direction:column;gap:var(--gap-md);height:100%;">
+    <div data-anim="fade-up" data-delay="1" style="display:flex;flex-direction:column;gap:var(--gap-md);">
+      <h2 class="h2">纹理贴图——旧方案</h2>
+      <div style="display:flex;align-items:center;gap:var(--gap-md);flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:0.5vw;">
+          <div class="pipe-box">输入图片</div>
+          <span style="color:var(--c-fg-3);font-size:1.8vw;">+</span>
+          <div class="pipe-box">几何参考</div>
+          <span style="color:var(--c-fg-3);font-size:1.8vw;">→</span>
+          <div class="pipe-box hi">反投影</div>
+        </div>
+        <div style="display:flex;gap:var(--gap-sm);">
+          <span class="tag warn">接缝明显</span>
+          <span class="tag warn">遮挡全靠猜</span>
+        </div>
+      </div>
+    </div>
+    <div data-anim="fade-in" data-delay="2" class="img-box" style="flex:1;min-height:0;width:100%;">
+      <img src="images/slide13_img01.jpg" style="width:100%;height:100%;object-fit:contain;"/>
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">13 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 14 · 原生纹理 ═══════════════════════════════════════ -->
+<section class="slide dark slide--fullimg">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">原生纹理</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">14 / 25</span>
+  </div>
+  <h2 class="h2" style="margin-bottom:1.5vh;" data-anim="fade-up" data-delay="1">原生纹理</h2>
+  <div class="slide-body" data-anim="fade-in" data-delay="2">
+    <div class="img-box" style="width:100%;height:100%;"><img src="images/slide14_img01.png" /></div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">14 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 15 · 分部件——拆分 (1) ══════════════════════════════ -->
+<section class="slide dark slide--fullimg">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">分部件</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">15 / 25</span>
+  </div>
+  <h2 class="h2" style="margin-bottom:1.5vh;" data-anim="fade-up" data-delay="1">分部件——拆分</h2>
+  <div class="slide-body" data-anim="fade-in" data-delay="2">
+    <div class="img-box" style="width:100%;height:100%;"><img src="images/slide15_img00.png" /></div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">15 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 16 · 分部件——拆分 (2) ══════════════════════════════ -->
+<section class="slide dark slide--fullimg">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">分部件</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">16 / 25</span>
+  </div>
+  <h2 class="h2" style="margin-bottom:1.5vh;" data-anim="fade-up" data-delay="1">分部件——拆分 结果</h2>
+  <div class="slide-body" data-anim="fade-in" data-delay="2">
+    <div class="img-row cols-2" style="height:100%;">
+      <div class="img-box"><img src="images/slide16_img01.jpg" /></div>
+      <div class="img-box"><img src="images/slide16_img02.png" /></div>
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">16 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 17 · 万物绑骨 ═══════════════════════════════════════ -->
+<section class="slide dark slide--fullimg">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">动画</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">17 / 25</span>
+  </div>
+  <h2 class="h2" style="margin-bottom:1.5vh;" data-anim="fade-up" data-delay="1">万物绑骨</h2>
+  <div class="slide-body" data-anim="fade-in" data-delay="2">
+    <div class="img-box" style="width:100%;height:100%;"><img src="images/slide17_img01.png" /></div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">17 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 18 · 数据管线 (chapter) ══════════════════════════════ -->
+<section class="slide dark slide--chapter">
+  <div class="chapter-num" data-anim="fade-in" data-delay="0">INFRASTRUCTURE</div>
+  <h1 class="h1" data-anim="fade-up" data-delay="1">数据管线</h1>
+</section>
+
+<!-- ═══ SLIDE 19 · 工程部署优化 ══════════════════════════════════ -->
+<section class="slide dark slide--list">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">工程</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">19 / 25</span>
+  </div>
+  <div class="slide-body">
+    <div class="list-head" data-anim="fade-up" data-delay="1">
+      <h2 class="h2">工程部署优化</h2>
+    </div>
+    <div data-anim="fade-up" data-delay="2" style="display:grid;grid-template-rows:1fr 1fr;gap:var(--gap-md);">
+      <div>
+        <div class="topic-label">算法层</div>
+        <ul class="bullet-list">
+          <li>高效的架构设计</li>
+          <li>蒸馏、量化</li>
+          <li>性能优化 · Auto Offload</li>
+          <li>一整套 GPU 性能优化方案</li>
+        </ul>
+      </div>
+      <div>
+        <div class="topic-label">工作流层</div>
+        <ul class="bullet-list">
+          <li>GPU 和 CPU 模块单独部署</li>
+          <li>尽可能并行处理</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">19 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 20 · 问题反馈 (1) ══════════════════════════════════ -->
+<section class="slide dark">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">问题反馈</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">20 / 25</span>
+  </div>
+  <h2 class="h2" style="margin-bottom:2vh;" data-anim="fade-up" data-delay="1">问题反馈</h2>
+  <div class="two-col-bullets" data-anim="fade-up" data-delay="2">
+    <div class="topic-block">
+      <div class="topic-label">多视图</div>
+      <p class="topic-body">客观事实：精度和单视图一样，多视图用于更精细的控制</p>
+      <p class="topic-body">鲁棒性：不要求严格正交视角，对角度有一定容忍度</p>
+      <p class="topic-note">规划 → 支持更多视角，无需指定方位</p>
+    </div>
+    <div class="topic-block">
+      <div class="topic-label">Ultra 模式</div>
+      <p class="topic-body">主要用于更高精度、提升几何细节</p>
+      <p class="topic-body">如发现表面坑洼，可尝试 3.1 标准版</p>
+      <p class="topic-note">规划 → 改进基础模型，更平整、更锐利</p>
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">20 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 21 · 问题反馈 (2) ══════════════════════════════════ -->
+<section class="slide dark">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">问题反馈</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">21 / 25</span>
+  </div>
+  <h2 class="h2" style="margin-bottom:2vh;" data-anim="fade-up" data-delay="1">问题反馈</h2>
+  <div class="two-col-bullets" data-anim="fade-up" data-delay="2">
+    <div class="topic-block">
+      <div class="topic-label">分部件</div>
+      <p class="topic-body">建议：先拆分，再贴图（贴图后修改几何 → 烘焙效果受损）</p>
+      <p class="topic-note">规划 → 效果/速度本月更新；支持在 2D 图上编辑（尽快开放）</p>
+    </div>
+    <div class="topic-block">
+      <div class="topic-label">几何基础模型</div>
+      <p class="topic-body">和图片不像：长剑、人脸等场景需要持续改进</p>
+    </div>
+    <div class="topic-block">
+      <div class="topic-label">纹理贴图</div>
+      <p class="topic-body">偏纯色，丢失光照阴影细节</p>
+      <p class="topic-note">规划 → 增加去光选项</p>
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">21 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 22 · 问题反馈 (3) ══════════════════════════════════ -->
+<section class="slide dark">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">问题反馈</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">22 / 25</span>
+  </div>
+  <h2 class="h2" style="margin-bottom:2vh;" data-anim="fade-up" data-delay="1">问题反馈</h2>
+  <div class="two-col-bullets" data-anim="fade-up" data-delay="2">
+    <div class="topic-block">
+      <div class="topic-label">风格一致资产集合</div>
+      <p class="topic-body">图片风格一致 → 输出一般都能保证。纹理目前偏写实</p>
+      <p class="topic-note">规划 → 贴图整体风格控制；更好的一致性需设置 Shader</p>
+    </div>
+    <div class="topic-block">
+      <div class="topic-label">精确尺寸</div>
+      <p class="topic-body">无法用文字设置尺寸，可用多视图代替</p>
+      <p class="topic-note">规划 → 增加文字控制</p>
+    </div>
+    <div class="topic-block">
+      <div class="topic-label">文字控制</div>
+      <p class="topic-body">文字辅助控制图片无法提供的视角；模型优先让输出和图片一致</p>
+      <p class="topic-body">文字与图片冲突 → 文字会失效或起反作用</p>
+      <p class="topic-note">规划 → 增加文字二次编辑</p>
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">22 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 23 · 问题反馈 (4) ══════════════════════════════════ -->
+<section class="slide dark">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">问题反馈</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">23 / 25</span>
+  </div>
+  <h2 class="h2" style="margin-bottom:2vh;" data-anim="fade-up" data-delay="1">问题反馈</h2>
+  <div class="two-col-bullets" data-anim="fade-up" data-delay="2">
+    <div class="topic-block">
+      <div class="topic-label">上传模型</div>
+      <p class="topic-body">几乎所有能力均可用于上传模型，信息尽量保留（纹理、动画、命名、UV 等）</p>
+    </div>
+    <div class="topic-block">
+      <div class="topic-label">导出定制 / 高低模</div>
+      <p class="topic-body">需 Case by Case 沟通</p>
+      <p class="topic-note">规划 → 支持高低模、烘焙，按游戏管线提供</p>
+    </div>
+    <div class="topic-block">
+      <div class="topic-label">API vs Studio</div>
+      <p class="topic-body">效果不会有区别；可能受渲染方式和随机种子影响</p>
+    </div>
+    <div class="topic-block">
+      <div class="topic-label">自定义骨骼</div>
+      <p class="topic-body">有方法但效果还不够稳定，持续努力中</p>
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">23 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 24 · 近期规划 (1) ══════════════════════════════════ -->
+<section class="slide dark">
+  <div class="slide-chrome">
+    <span class="label muted" data-anim="fade-in" data-delay="0">近期规划</span>
+    <span class="label muted" data-anim="fade-in" data-delay="0">24 / 25</span>
+  </div>
+  <h2 class="h2" style="margin-bottom:2vh;" data-anim="fade-up" data-delay="1">近期规划</h2>
+  <div class="two-col-bullets" data-anim="fade-up" data-delay="2">
+    <div class="topic-block">
+      <div class="topic-label">几何基础 · H 系列</div>
+      <ul class="bullet-list">
+        <li>更平整、更锐利</li>
+        <li>基于新版模型更新部件补全</li>
+        <li>更多自由视角控制</li>
+        <li>支持编辑 (TBD)</li>
+      </ul>
+    </div>
+    <div class="topic-block">
+      <div class="topic-label">几何基础 · P 系列</div>
+      <ul class="bullet-list">
+        <li>优化破面问题</li>
+        <li>支持四边面</li>
+        <li>支持更高面数</li>
+        <li>支持重拓扑（高低模对应）</li>
+        <li>支持编辑</li>
+      </ul>
+    </div>
+  </div>
+  <div class="slide-foot">
+    <span class="label muted">Tripo AI · 2026年5月18日</span>
+    <span class="label muted">24 / 25</span>
+  </div>
+</section>
+
+<!-- ═══ SLIDE 25 · 近期规划 (2) + END ════════════════════════════ -->
+<section class="slide dark slide--end">
+  <h1 class="h1" style="max-width:85%;line-height:0.9;font-size:var(--sz-display);color:var(--c-fg);" data-anim="fade-up" data-delay="0">
+    Questions &amp;<br/>Thoughts?
+  </h1>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap-md);margin-top:var(--gap-lg);" data-anim="fade-up" data-delay="2">
+    <div class="topic-block">
+      <div class="topic-label">纹理</div>
+      <ul class="bullet-list">
+        <li>8K 贴图：更精细</li>
+        <li>配合 P 系列，速度更快</li>
+        <li>智能 UV</li>
+      </ul>
+    </div>
+    <div class="topic-block">
+      <div class="topic-label">分拆件</div>
+      <ul class="bullet-list">
+        <li>效果更好、速度更快</li>
+        <li>支持 2D 图片控制</li>
+      </ul>
+    </div>
+    <div class="topic-block">
+      <div class="topic-label">动画</div>
+      <ul class="bullet-list">
+        <li>绑骨效果/速度提升</li>
+        <li>视频动捕 + 动画重定向</li>
+        <li>Articulate 资产生成</li>
+        <li>场景生成</li>
+      </ul>
+    </div>
+  </div>
+  <div class="cover-footer" style="border-top-color:var(--c-border);margin-top:auto;" data-anim="fade-in" data-delay="4">
+    <span class="cover-footer-col" style="color:var(--c-fg-2);">25 / 25 · 梁鼎</span>
+    <span class="cover-footer-col" style="text-align:center;color:var(--c-fg-2);">Tripo背后的算法</span>
+    <span class="cover-footer-col" style="color:var(--c-fg-2);">Tripo AI</span>
+  </div>
+</section>
+
+</div><!-- /deck -->
+
+<script>
+      (function () {
+        "use strict";
+
+        /* ── State ─────────────────────────────────────────────────────────── */
+        const deck = document.getElementById("deck");
+        const slides = Array.from(document.querySelectorAll(".slide"));
+        const dotsEl = document.getElementById("nav-dots");
+        const counter = document.getElementById("slide-counter");
+        const total = slides.length;
+        let current = 0;
+        let animating = false;
+
+        /* ── Mind map step system ──────────────────────────────────────────── */
+        const MINDMAP_IDX = 2; // slide 3 is index 2
+        const MM_MAX_STEP = 10;
+        let mmStep = -1;
+
+        function mmRevealNext() {
+          if (mmStep >= MM_MAX_STEP) return false; // all done, advance slide
+          mmStep++;
+          if (mmStep === 0) {
+            // reveal center
+            const center = document.querySelector('.mm-center-wrap');
+            if (center) center.classList.add('mm-revealed');
+            return true;
+          }
+          // reveal all items with data-step == mmStep
+          const items = document.querySelectorAll('.mm-step-item[data-step="' + mmStep + '"]');
+          items.forEach(function(el) {
+            el.classList.add('mm-revealed');
+          });
+          // update hint
+          const hint = document.getElementById('mm-hint');
+          if (hint) {
+            if (mmStep >= MM_MAX_STEP) { hint.classList.add('done'); }
+          }
+          return true;
+        }
+
+        function mmReset(fullReveal) {
+          mmStep = -1;
+          document.querySelectorAll('.mm-step-item, .mm-center-wrap').forEach(function(el) {
+            el.classList.remove('mm-revealed');
+          });
+          const hint = document.getElementById('mm-hint');
+          if (hint) { hint.classList.remove('done'); }
+          if (fullReveal) {
+            // entering from next slide going backward — show everything
+            mmStep = MM_MAX_STEP;
+            document.querySelectorAll('.mm-step-item, .mm-center-wrap').forEach(function(el) {
+              el.classList.add('mm-revealed');
+            });
+            if (hint) hint.classList.add('done');
+          }
+        }
+
+        /* ── Bootstrap: set deck width, build nav dots ─────────────────────── */
+        function init() {
+          // The deck is one wide strip — width equals N full viewports
+          deck.style.width = total + "00vw";
+
+          // Build one dot per slide
+          slides.forEach(function (_, i) {
+            const btn = document.createElement("button");
+            btn.className = "nav-dot";
+            btn.setAttribute("aria-label", "Go to slide " + (i + 1));
+            btn.addEventListener("click", function () {
+              goTo(i);
+            });
+            dotsEl.appendChild(btn);
+          });
+
+          // Activate the first slide immediately
+          goTo(0, true); // true = skip transition on load
+        }
+
+        /* ── goTo: the single source of truth for navigation ───────────────── */
+        function navigate(direction) {
+          // direction: +1 = forward, -1 = backward
+          if (animating) return;
+
+          // Mind map intercept
+          if (current === MINDMAP_IDX && direction > 0) {
+            if (mmRevealNext()) return; // handled within mindmap
+          }
+
+          const targetIndex = current + direction;
+          goTo(targetIndex);
+        }
+
+        function goTo(index, instant) {
+          index = Math.max(0, Math.min(total - 1, index));
+          if (index === current && !instant) return;
+
+          const goingForward = index > current;
+          const goingBackward = index < current;
+
+          // Reset mindmap if leaving it
+          if (current === MINDMAP_IDX && goingForward) {
+            mmReset(false);
+          }
+          // If entering mindmap from next slide (going backward), fully reveal
+          if (index === MINDMAP_IDX && goingBackward) {
+            mmReset(true);
+          }
+          // If entering mindmap going forward (from prev), reset fresh
+          if (index === MINDMAP_IDX && goingForward) {
+            mmReset(false);
+          }
+
+          animating = true;
+
+          const prev = slides[current];
+          prev.classList.remove("is-active");
+          void prev.offsetWidth;
+
+          if (instant) {
+            deck.style.transition = "none";
+            deck.style.transform = "translateX(-" + index + "00vw)";
+            void deck.offsetWidth;
+            deck.style.transition = "";
+          } else {
+            deck.style.transform = "translateX(-" + index + "00vw)";
+          }
+
+          current = index;
+          const next = slides[current];
+          next.classList.add("is-active");
+
+          // Auto-show center node when entering mindmap going forward
+          if (current === MINDMAP_IDX && !instant && mmStep < 0) {
+            setTimeout(function() { mmRevealNext(); }, 300);
+          }
+
+          Array.from(dotsEl.children).forEach(function (dot, i) {
+            dot.classList.toggle("is-active", i === current);
+          });
+
+          counter.textContent = current + 1 + " / " + total;
+
+          const delay = instant
+            ? 0
+            : parseFloat(getComputedStyle(deck).transitionDuration) * 1000;
+          setTimeout(function () {
+            animating = false;
+          }, delay);
+        }
+
+        /* ── Keyboard navigation ──────────────────────────────────────────── */
+        document.addEventListener("keydown", function (e) {
+          if (animating) return;
+          if (e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === " ") {
+            e.preventDefault();
+            navigate(+1);
+          } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+            e.preventDefault();
+            navigate(-1);
+          } else if (e.key === "Home") {
+            e.preventDefault();
+            goTo(0);
+          } else if (e.key === "End") {
+            e.preventDefault();
+            goTo(total - 1);
+          }
+        });
+
+        /* ── Mouse-wheel navigation ───────────────────────────────────────── */
+        let wheelCooldown = false;
+        document.addEventListener(
+          "wheel",
+          function (e) {
+            e.preventDefault();
+            if (animating || wheelCooldown) return;
+            wheelCooldown = true;
+            setTimeout(function () { wheelCooldown = false; }, 900);
+            if (e.deltaY > 0 || e.deltaX > 0) {
+              navigate(+1);
+            } else {
+              navigate(-1);
+            }
+          },
+          { passive: false },
+        );
+
+        /* ── Touch swipe navigation ───────────────────────────────────────── */
+        let touchStartX = null;
+        let touchStartY = null;
+
+        document.addEventListener(
+          "touchstart",
+          function (e) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+          },
+          { passive: true },
+        );
+
+        document.addEventListener(
+          "touchend",
+          function (e) {
+            if (touchStartX === null) return;
+            const dx = touchStartX - e.changedTouches[0].clientX;
+            const dy = touchStartY - e.changedTouches[0].clientY;
+            // Only respond if horizontal swipe is dominant
+            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 40) {
+              if (animating) return;
+              if (dx > 0) {
+                navigate(+1);
+              } else {
+                navigate(-1);
+              }
+            }
+            touchStartX = null;
+            touchStartY = null;
+          },
+          { passive: true },
+        );
+
+        /* ── Boot ─────────────────────────────────────────────────────────── */
+        init();
+      })();
+    </script>
+</body>
+</html>
